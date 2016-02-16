@@ -47,6 +47,6 @@ my Date $today = Date.today;
 
 ok( %version<choose_util> > 0, 'Version greater than 0  OK' );
 
-is( %podversion<choose_util>, %version<choose_util>, 'Version in POD Term::Choose  OK' );
+is( %podversion<choose_util>, %version<choose_util>, 'Version in POD Term::Choose::Util  OK' );
 is( $version_in_changelog,    %version<choose_util>, 'Version in "Changes"  OK' );
 is( $release_date,            $today,                'Release date in Changes is date from today  OK' );

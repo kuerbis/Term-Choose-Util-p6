@@ -1,10 +1,10 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.001';
+my $VERSION = '0.002';
 
 use Term::Choose;
-use Term::Choose::LineFold :printwidth_func;
+use Term::Choose::LineFold :all;
 
 
 
@@ -23,7 +23,7 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
                 @dirs = $dir.dir.grep( { .d } );
             }
             else {
-                @dirs = $dir.dir.grep( { .d && .basename !~~ /^\./ } );
+                @dirs = $dir.dir.grep( { .d && .basename !~~ / ^ \. / } );
             }
             CATCH { #
                 my $prompt = $dir.gist ~ ":\n" ~ $_;
@@ -93,7 +93,8 @@ sub _prepare_opt_choose_path ( %opt ) {
         order        => 1,
         justify      => 0,
         enchanted    => 1,
-        confirm      => ' . ',
+        confirm      => ' = ',
+        add_dir      => ' . ',
         up           => ' .. ',
         file         => ' >F ',
         back         => ' < ',
@@ -101,11 +102,6 @@ sub _prepare_opt_choose_path ( %opt ) {
         #current      => Any,
         #prompt       => Any,
     );
-    my $called_from = callframe( 1 ).code.gist; #
-    if $called_from ~~ /^sub\schoose_dirs/ {
-        %defaults<confirm> = ' = ';
-        %defaults<add_dir> = ' . ';
-    }
     #for my %opt ( keys %%opt ) {
     #    die "%opt: invalid option!" if ! exists %defaults->{%opt};
     #}
@@ -144,7 +140,7 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
                 @dirs = $dir.dir.grep( { .d } );
             }
             else {
-                @dirs = $dir.dir.grep( { .d && .basename !~~ /^\./ } );
+                @dirs = $dir.dir.grep( { .d && .basename !~~ / ^ \. / } );
             }
             CATCH { #
                 my $prompt = $dir.gist ~ ":\n" ~ $_;
@@ -202,7 +198,7 @@ sub _a_file ( %o, IO::Path $dir --> IO::Path ) {
             @files = $dir.dir.grep( { .IO.f } );
         }
         else {
-            @files = $dir.dir.grep( { .f && .basename !~~ /^\./ } );
+            @files = $dir.dir.grep( { .f && .basename !~~ / ^ \. / } );
         }
         CATCH { #
             my $prompt = $dir.gist ~ ":\n" ~ $_;
@@ -312,7 +308,7 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
             return $result.Int;
         }
         my Str $begin = ( $range.split( / \s+ '-' \s+ / ) )[0];
-        my $zeros;
+        my Int $zeros;
         if $sep.chars {
             $zeros = $begin.trim-leading.subst( / $sep /, '', :g ).chars - 1;
         }
@@ -382,7 +378,7 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
             { prompt => $lines, layout => $layout, mouse => $mouse, clear_screen => $clear, justify => $justify,
               index => 1, order => $order, no_spacebar => [ 0 .. @pre.end ], undef => $back, lf => [ 0, $len_key ] }
         );
-        if ! @idx[0].defined || @idx[0] == 0 {
+        if ! @idx[0] { #
             if @new_idx.elems {
                 @new_idx = Empty;
                 @new_val = Empty;
@@ -394,7 +390,7 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
         }
         if @idx[0] == 1 {
             @idx.shift;
-            @new_val.append( @available[@idx >>->> @pre.elems] );
+            @new_val.append( @available[@idx >>->> @pre.elems] ); # map
             @new_idx.append( @idx >>->> @pre.elems );
             return $index ?? @new_idx !! @new_val;
         }
@@ -404,7 +400,29 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
 }
 
 
-sub change_config ( @menu, %setup, %opt? ) is export( :MANDATORY ) {
+#`<<< example 'change_config':
+
+my @menu = (
+    [ 'enable_logging', "- Enable logging", [ 'NO', 'YES' ] ],
+    [ 'case_sensitive', "- Case sensitive", [ 'NO', 'YES' ] ],
+);
+
+my %config = (
+    'enable_logging' => 0,
+    'case_sensitive' => 1,
+);
+
+my %tmp_config = change_config( @menu, %config, { in_place => 0 } );
+if %tmp_config {
+    for %tmp_config.kv -> $key, $value {
+        %config{$key} = $value;
+    }
+}
+
+my $changed = change_config( @menu, %config, { in_place => 1 } );
+>>>
+
+sub change_config ( @menu, %setup, %opt? ) is export( :all ) {
     my Str $prompt   = %opt<prompt>       // 'Choose:';
     my Int $in_place = %opt<in_place>     // 1;
     my Int $clear    = %opt<clear_screen> // 1;
@@ -421,6 +439,7 @@ sub change_config ( @menu, %setup, %opt? ) is export( :MANDATORY ) {
         %setup{$key} //= 0;
         %new_setup{$key} = %setup{$key};
     }
+    my $no_change = %opt<in_place> ?? 0 !! {};
     my $count = 0;
 
     loop {
@@ -439,11 +458,11 @@ sub change_config ( @menu, %setup, %opt? ) is export( :MANDATORY ) {
               index => 1, clear_screen => $clear, undef => $back }
         );
         if ! $idx.defined {
-            return {};
+            return $no_change;
         }
         my $choice = @choices[$idx];
         if ! $choice.defined {
-            return {};
+            return $no_change;
         }
         elsif $choice eq $confirm {
             my Int $change = 0;
@@ -459,8 +478,8 @@ sub change_config ( @menu, %setup, %opt? ) is export( :MANDATORY ) {
                     $change++;
                 }
             }
-            return {}                     if ! $change;
-            return { changes => $change } if $in_place;
+            return $no_change if ! $change;
+            return 1          if $in_place;
             return %new_setup;
         }
         my Str   $key          = @menu[$idx-@pre][0];
@@ -580,7 +599,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.001
+Version 0.002
 
 =head1 DESCRIPTION
 
@@ -605,11 +624,11 @@ To move around in the directory tree:
 
 - select a directory and press C<Return> to enter in the selected directory.
 
-- choose the "up"-menu-entry ("C<..>") to move upwards.
+- choose the "up"-menu-entry ("C< .. >") to move upwards.
 
-To return the current working-directory as the chosen directory choose "C<.>".
+To return the current working-directory as the chosen directory choose "C< = >".
 
-The "back"-menu-entry ("C<E<lt>>") causes C<choose_a_dir> to return nothing.
+The "back"-menu-entry ("C< E<lt> >") causes C<choose_a_dir> to return nothing.
 
 As an argument it can be passed a hash. With this hash the user can set the different options:
 
@@ -645,13 +664,13 @@ Values: [0],1,2.
 
 =item1 layout
 
-See the option I<layout> in L<Term::Choose>
+See the option I<layout> in L<Term::Choose|https://github.com/kuerbis/Term-Choose-p6>
 
 Values: 0,[1],2.
 
 =item1 mouse
 
-See the option I<mouse> in L<Term::Choose>
+See the option I<mouse> in L<Term::Choose|https://github.com/kuerbis/Term-Choose-p6>
 
 Values: [0],1,2.
 
@@ -680,14 +699,14 @@ Values: 0,[1].
 Browse the directory tree like with C<choose_a_dir>. Select "C<E<gt>F>" to get the files of the current directory; than
 the chosen file is returned.
 
-The options are passed with hash. See L<#choose_a_dir> for the different options. C<choose_a_file> has no option
+The options are passed with a hash. See L<#choose_a_dir> for the different options. C<choose_a_file> has no option
 I<current>.
 
 =head2 choose_dirs
 
 =begin code
 
-    $chosen_directories = choose_dirs( { layout => 1, ... } )
+    @chosen_directories = choose_dirs( { layout => 1, ... } )
 
 =end code
 
@@ -741,7 +760,7 @@ Default: empty string ("");
 
 =item1 mouse
 
-See the option I<mouse> in L<Term::Choose>
+See the option I<mouse> in L<Term::Choose|https://github.com/kuerbis/Term-Choose-p6>
 
 Values: [0],1,2.
 
@@ -791,13 +810,13 @@ Values: [0],1,2.
 
 =item1 layout
 
-See the option I<layout> in L<Term::Choose>.
+See the option I<layout> in L<Term::Choose|https://github.com/kuerbis/Term-Choose-p6>.
 
 Values: 0,1,[2].
 
 =item1 mouse
 
-See the option I<mouse> in L<Term::Choose>
+See the option I<mouse> in L<Term::Choose|https://github.com/kuerbis/Term-Choose-p6>
 
 Values: [0],1,2.
 
@@ -814,94 +833,13 @@ Values: 0,[1].
 I<prefix> expects as its value a string. This string is put in front of the elements of the available list before
 printing. The chosen elements are returned without this I<prefix>.
 
-The default value is "- " if the I<layout> is 3 else the default is the empty string ("").
+The default value is "- " if the I<layout> is 2 else the default is the empty string ("").
 
 =item1 prompt
 
 The prompt line before the choices.
 
 Defaults to "Choose:".
-
-=head2 change_config
-
-    %tmp = change_config( @menu, %config, { in_place => 0 } )
-    if %tmp {
-        for keys %tmp.keys -> $key {
-            %config{$key} = %tmp{$key};
-        }
-    }
-
-The first argument is an array of arrays. These arrays have three elements:
-
-=item1 the key/option name
-
-=item1 the prompt string
-
-=item1 an array with the available values of the option.
-
-The second argument is a hash:
-
-=item1 the keys are the option names
-
-=item1 the values (C<0> if not defined) are the indexes of the current value of the respective key.
-
-=begin code
-
-    @menu = (
-        [ 'enable_logging', "- Enable logging", [ 'NO', 'YES' ] ],
-        [ 'case_sensitive', "- Case sensitive", [ 'NO', 'YES' ] ],
-        ...
-    );
-
-    %config = (
-        'enable_logging' => 0,
-        'case_sensitive' => 1,
-        ...
-    );
-
-=end code
-
-The optional third argument can be used to pass a hash with the options.
-
-When C<change_config> is called, it displays for each array entry a row with the prompt string and the current value.
-It is possible to scroll through the rows. If a row is selected, the set and displayed value changes to the next. If the
-end of the list of the values is reached, it begins from the beginning of the list.
-
-For the return-values see L<#in_place> below.
-
-The option:
-
-=item1 clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
-
-=item1 in_place
-
-If I<in_place> is not enabled, a new configuration hash is created and returned. If nothing has changed C<{}> is
-returned.
-
-If I<in_place> is enabled, the configuration hash (second argument) is edited in place. If the user has changed values
-change_config returns C<{ changes => $number_of_changes }> else C<{}> is returned.
-
-Values: 0,[1].
-
-=item1 mouse
-
-See the option I<mouse> in L<Term::Choose>
-
-Values: [0],1,2.
-
-=item1 prompt
-
-Overwrites the default prompt string.
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Term::TablePrint
 
 =head1 AUTHOR
 

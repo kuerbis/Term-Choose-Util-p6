@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/kuerbis/Term-Choose-Util-p6.svg?branch=master)](https://travis-ci.org/kuerbis/Term-Choose-Util-p6)
+
 NAME
 ====
 
@@ -6,7 +8,7 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.001
+Version 0.002
 
 DESCRIPTION
 ===========
@@ -29,11 +31,11 @@ To move around in the directory tree:
 
 - select a directory and press `Return` to enter in the selected directory.
 
-- choose the "up"-menu-entry ("`..`") to move upwards.
+- choose the "up"-menu-entry ("`.. `") to move upwards.
 
-To return the current working-directory as the chosen directory choose "`.`".
+To return the current working-directory as the chosen directory choose "`= `".
 
-The "back"-menu-entry ("`E<lt>`") causes `choose_a_dir` to return nothing.
+The "back"-menu-entry ("`E<lt> `") causes `choose_a_dir` to return nothing.
 
 As an argument it can be passed a hash. With this hash the user can set the different options:
 
@@ -67,13 +69,13 @@ Values: [0],1,2.
 
   * layout
 
-See the option *layout* in [Term::Choose](Term::Choose)
+See the option *layout* in [Term::Choose](https://github.com/kuerbis/Term-Choose-p6)
 
 Values: 0,[1],2.
 
   * mouse
 
-See the option *mouse* in [Term::Choose](Term::Choose)
+See the option *mouse* in [Term::Choose](https://github.com/kuerbis/Term-Choose-p6)
 
 Values: [0],1,2.
 
@@ -98,12 +100,12 @@ choose_a_file
 
 Browse the directory tree like with `choose_a_dir`. Select "`E<gt>F`" to get the files of the current directory; than the chosen file is returned.
 
-The options are passed with hash. See [#choose_a_dir](#choose_a_dir) for the different options. `choose_a_file` has no option *current*.
+The options are passed with a hash. See [#choose_a_dir](#choose_a_dir) for the different options. `choose_a_file` has no option *current*.
 
 choose_dirs
 -----------
 
-        $chosen_directories = choose_dirs( { layout => 1, ... } )
+        @chosen_directories = choose_dirs( { layout => 1, ... } )
 
 `choose_dirs` is similar to `choose_a_dir` but it is possible to return multiple directories.
 
@@ -149,7 +151,7 @@ Default: empty string ("");
 
   * mouse
 
-See the option *mouse* in [Term::Choose](Term::Choose)
+See the option *mouse* in [Term::Choose](https://github.com/kuerbis/Term-Choose-p6)
 
 Values: [0],1,2.
 
@@ -194,13 +196,13 @@ Values: [0],1,2.
 
   * layout
 
-See the option *layout* in [Term::Choose](Term::Choose).
+See the option *layout* in [Term::Choose](https://github.com/kuerbis/Term-Choose-p6).
 
 Values: 0,1,[2].
 
   * mouse
 
-See the option *mouse* in [Term::Choose](Term::Choose)
+See the option *mouse* in [Term::Choose](https://github.com/kuerbis/Term-Choose-p6)
 
 Values: [0],1,2.
 
@@ -216,88 +218,13 @@ Values: 0,[1].
 
 *prefix* expects as its value a string. This string is put in front of the elements of the available list before printing. The chosen elements are returned without this *prefix*.
 
-The default value is "- " if the *layout* is 3 else the default is the empty string ("").
+The default value is "- " if the *layout* is 2 else the default is the empty string ("").
 
   * prompt
 
 The prompt line before the choices.
 
 Defaults to "Choose:".
-
-change_config
--------------
-
-    %tmp = change_config( @menu, %config, { in_place => 0 } )
-    if %tmp {
-        for keys %tmp.keys -> $key {
-            %config{$key} = %tmp{$key};
-        }
-    }
-
-The first argument is an array of arrays. These arrays have three elements:
-
-  * the key/option name
-
-  * the prompt string
-
-  * an array with the available values of the option.
-
-The second argument is a hash:
-
-  * the keys are the option names
-
-  * the values (`0` if not defined) are the indexes of the current value of the respective key.
-
-        @menu = (
-            [ 'enable_logging', "- Enable logging", [ 'NO', 'YES' ] ],
-            [ 'case_sensitive', "- Case sensitive", [ 'NO', 'YES' ] ],
-            ...
-        );
-
-        %config = (
-            'enable_logging' => 0,
-            'case_sensitive' => 1,
-            ...
-        );
-
-The optional third argument can be used to pass a hash with the options.
-
-When `change_config` is called, it displays for each array entry a row with the prompt string and the current value. It is possible to scroll through the rows. If a row is selected, the set and displayed value changes to the next. If the end of the list of the values is reached, it begins from the beginning of the list.
-
-For the return-values see [#in_place](#in_place) below.
-
-The option:
-
-  * clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
-
-  * in_place
-
-If *in_place* is not enabled, a new configuration hash is created and returned. If nothing has changed `{}` is returned.
-
-If *in_place* is enabled, the configuration hash (second argument) is edited in place. If the user has changed values change_config returns `{ changes =` $number_of_changes }> else `{}` is returned.
-
-Values: 0,[1].
-
-  * mouse
-
-See the option *mouse* in [Term::Choose](Term::Choose)
-
-Values: [0],1,2.
-
-  * prompt
-
-Overwrites the default prompt string.
-
-SUPPORT
-=======
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Term::TablePrint
 
 AUTHOR
 ======
