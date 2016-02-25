@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.002';
+my $VERSION = '0.003';
 
 use Term::Choose;
 use Term::Choose::LineFold :all;
@@ -54,8 +54,8 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
         # Choose
         my $choice = choose(
             [ |@pre, |@dirs.sort ],
-            { prompt => $prompt, undef => %o<back>, default => $default_idx, mouse => %o<mouse>, justify => %o<justify>,
-              layout => %o<layout>, order => %o<order>, clear_screen => %o<clear_screen> }
+            { prompt => $prompt, undef => %o<back>, default => $default_idx, mouse => %o<mouse>,
+              justify => %o<justify>, layout => %o<layout>, order => %o<order> }
         );
         if ! $choice.defined {
             return [] if ! @chosen_dirs.elems;
@@ -87,7 +87,6 @@ sub _prepare_opt_choose_path ( %opt ) {
     die "Could not find the home directory \"$dir\"" if ! $dir.d;
     my %defaults = (
         show_hidden  => 1,
-        clear_screen => 1,
         mouse        => 0,
         layout       => 1,
         order        => 1,
@@ -161,8 +160,8 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
         # Choose
         my $choice = choose(
             [ |@pre, |@dirs.sort ],
-            { prompt => $prompt, undef => %o<back>, default => $default_idx, mouse => %o<mouse>, justify => %o<justify>,
-              layout => %o<layout>, order => %o<order>, clear_screen => %o<clear_screen> }
+            { prompt => $prompt, undef => %o<back>, default => $default_idx, mouse => %o<mouse>,
+              justify => %o<justify>, layout => %o<layout>, order => %o<order> }
         );
         if ! $choice.defined {
             return;
@@ -215,8 +214,8 @@ sub _a_file ( %o, IO::Path $dir --> IO::Path ) {
     # Choose
     my $choice = choose(
         [ Any, |@files.sort ],
-        { prompt => $prompt, undef => %o<back>, mouse => %o<mouse>, justify => %o<justify>,
-          layout => %o<layout>, order => %o<order>, clear_screen => %o<clear_screen> }
+        { prompt => $prompt, undef => %o<back>, mouse => %o<mouse>,
+          justify => %o<justify>, layout => %o<layout>, order => %o<order> }
     );
     return if ! $choice.defined;
     return $*SPEC.catfile( $dir, $choice ).IO;
@@ -229,7 +228,6 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
     my Str $sep     = %opt<thsd_sep>                    // ',';
     my Str $current = insert_sep( %opt<current>, $sep ) // Str;
     my Str $name    = %opt<name>                        // '';
-    my Int $clear   = %opt<clear_screen>                // 1;
     my Int $mouse   = %opt<mouse>                       // 0;
     #-------------------------------------------#
     my Int $longest = $digits + ( $sep eq '' ?? 0 !! ( $digits - 1 ) div 3 );
@@ -286,8 +284,7 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
         # Choose
         my $range = choose(
             [ |@pre, |@ranges ],
-            { prompt => $prompt, layout => 2, justify => 1, mouse => $mouse, 
-              clear_screen => $clear, undef => $back }
+            { prompt => $prompt, layout => 2, justify => 1, mouse => $mouse, undef => $back }
         );
         if ! $range.defined {
             if $result.defined {
@@ -321,8 +318,7 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
         # Choose
         my $num = choose(
             [ Any, |@choices, $reset ],
-            { prompt => $prompt, layout => 1, justify => 2, order => 0, mouse => $mouse, 
-              clear_screen => $clear, undef => $back_short }
+            { prompt => $prompt, layout => 1, justify => 2, order => 0, mouse => $mouse, undef => $back_short }
         );
         if ! $num.defined {
             next;
@@ -343,15 +339,14 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
 
 
 sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
-    my Int $index   = %opt<index>        // 0;
-    my Int $clear   = %opt<clear_screen> // 1;
-    my Int $mouse   = %opt<mouse>        // 0;
-    my Int $layout  = %opt<layout>       // 2;
-    my Int $order   = %opt<order>        // 1;
-    my Str $prefix  = %opt<prefix>       // ( $layout == 2 ?? '- ' !! '' );
-    my Int $justify = %opt<justify>      // 0;
-    my Str $prompt  = %opt<prompt>       // 'Choose:';
-    my     @current = %opt<current>      // [];
+    my Int $index   = %opt<index>   // 0;
+    my Int $mouse   = %opt<mouse>   // 0;
+    my Int $layout  = %opt<layout>  // 2;
+    my Int $order   = %opt<order>   // 1;
+    my Str $prefix  = %opt<prefix>  // ( $layout == 2 ?? '- ' !! '' );
+    my Int $justify = %opt<justify> // 0;
+    my Str $prompt  = %opt<prompt>  // 'Choose:';
+    my     @current = %opt<current> // [];
     #--------------------------------------#
     my Str $confirm = 'CONFIRM';
     my Str $back    = 'BACK';
@@ -375,8 +370,8 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
         # Choose
         my Int @idx = choose_multi(
             [ |@pre, |@avail_with_prefix  ],
-            { prompt => $lines, layout => $layout, mouse => $mouse, clear_screen => $clear, justify => $justify,
-              index => 1, order => $order, no_spacebar => [ 0 .. @pre.end ], undef => $back, lf => [ 0, $len_key ] }
+            { prompt => $lines, layout => $layout, mouse => $mouse, justify => $justify, index => 1,
+              order => $order, no_spacebar => [ 0 .. @pre.end ], undef => $back, lf => [ 0, $len_key ] }
         );
         if ! @idx[0] { #
             if @new_idx.elems {
@@ -400,7 +395,7 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
 }
 
 
-#`<<< example 'change_config':
+#`<<< example 'settings_menu':
 
 my @menu = (
     [ 'enable_logging', "- Enable logging", [ 'NO', 'YES' ] ],
@@ -412,22 +407,21 @@ my %config = (
     'case_sensitive' => 1,
 );
 
-my %tmp_config = change_config( @menu, %config, { in_place => 0 } );
+my %tmp_config = settings_menu( @menu, %config, { in_place => 0 } );
 if %tmp_config {
     for %tmp_config.kv -> $key, $value {
         %config{$key} = $value;
     }
 }
 
-my $changed = change_config( @menu, %config, { in_place => 1 } );
+my $changed = settings_menu( @menu, %config, { in_place => 1 } );
 >>>
 
-sub change_config ( @menu, %setup, %opt? ) is export( :all ) {
-    my Str $prompt   = %opt<prompt>       // 'Choose:';
-    my Int $in_place = %opt<in_place>     // 1;
-    my Int $clear    = %opt<clear_screen> // 1;
-    my Int $mouse    = %opt<mouse>        // 0;
-    #---------------------------------------#
+sub settings_menu ( @menu, %setup, %opt? ) is export( :all ) {
+    my Str $prompt   = %opt<prompt>   // 'Choose:';
+    my Int $in_place = %opt<in_place> // 1;
+    my Int $mouse    = %opt<mouse>    // 0;
+    #-------------------------------------#
     my Str $confirm = '  CONFIRM';
     my Str $back    = '  BACK';
     my Int $name_w = 0;
@@ -454,8 +448,8 @@ sub change_config ( @menu, %setup, %opt? ) is export( :all ) {
         # Choose
         my Int $idx = choose(
             @choices,
-            { prompt => $prompt, layout => 2, justify => 0, mouse => $mouse,
-              index => 1, clear_screen => $clear, undef => $back }
+            { prompt => $prompt, layout => 2, justify => 0, 
+              mouse => $mouse, index => 1, undef => $back }
         );
         if ! $idx.defined {
             return $no_change;
@@ -492,16 +486,10 @@ sub change_config ( @menu, %setup, %opt? ) is export( :all ) {
 
 
 sub term_size ( IO::Handle $handle_out = $*IN ) is export( :all ) {
-    if $*DISTRO.is-win {
-        #my ( $width, $height ) = ...;
-        #return $width - 1, $height;
-    }
-    else {
-        my Str $stty = qx[stty -a]; #
-        my Int $height = $stty.match( / 'rows '    <( \d+ )>/ ).Int;
-        my Int $width  = $stty.match( / 'columns ' <( \d+ )>/ ).Int;
-        return $width, $height; # $width - 1
-    }
+    my Str $stty = qx[stty -a]; #
+    my Int $height = $stty.match( / 'rows '    <( \d+ )>/ ).Int;
+    my Int $width  = $stty.match( / 'columns ' <( \d+ )>/ ).Int;
+    return $width, $height; # $width - 1
 }
 
 
@@ -531,7 +519,6 @@ sub print_hash ( %hash, %opt? ) is export( :all ) {
     my Str @keys         = %opt<keys>         // %hash.keys.sort;
     my Int $key_w        = %opt<len_key>      // @keys.map( { print_columns $_ } ).max;
     my Int $maxcols      = %opt<maxcols>      // Int;
-    my Int $clear        = %opt<clear_screen> // 1;
     my Int $mouse        = %opt<mouse>        // 0;
     my Str $preface      = %opt<preface>      // Str;
     my Str $prompt       = %opt<prompt>       // ( $preface.defined  ?? '' !! 'Close with ENTER' );
@@ -560,8 +547,7 @@ sub print_hash ( %hash, %opt? ) is export( :all ) {
     #return @vals.join( "\n" ) if return something;
     pause(
         @vals,
-        { prompt => $prompt, layout => 2, justify => 0, 
-          mouse => $mouse, clear_screen => $clear, empty => ' ' }
+        { prompt => $prompt, layout => 2, justify => 0, mouse => $mouse, empty => ' ' }
     );
 }
 
@@ -599,7 +585,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.002
+Version 0.003
 
 =head1 DESCRIPTION
 
@@ -631,12 +617,6 @@ To return the current working-directory as the chosen directory choose "C< = >".
 The "back"-menu-entry ("C< E<lt> >") causes C<choose_a_dir> to return nothing.
 
 As an argument it can be passed a hash. With this hash the user can set the different options:
-
-=item1 clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
 
 =item1 current
 
@@ -742,12 +722,6 @@ first argument to 6 would offer a range from 0 to 999999.
 
 The optional second argument is a hash with these keys (options):
 
-=item1 clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
-
 =item1 current
 
 The current value. If set, two prompt lines are displayed - one for the current number and one for the new number.
@@ -783,12 +757,6 @@ C<choose_a_subset> lets you choose a subset from a list.
 As a first argument it is required an array which provides the available list.
 
 The optional second argument is a hash. The following options are available:
-
-=item1 clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
 
 =item1 current
 

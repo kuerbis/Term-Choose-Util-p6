@@ -8,7 +8,7 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.002
+Version 0.003
 
 DESCRIPTION
 ===========
@@ -38,12 +38,6 @@ To return the current working-directory as the chosen directory choose "`= `".
 The "back"-menu-entry ("`E<lt> `") causes `choose_a_dir` to return nothing.
 
 As an argument it can be passed a hash. With this hash the user can set the different options:
-
-  * clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
 
   * current
 
@@ -133,12 +127,6 @@ The fist argument - "digits" - is an integer and determines the range of the ava
 
 The optional second argument is a hash with these keys (options):
 
-  * clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
-
   * current
 
 The current value. If set, two prompt lines are displayed - one for the current number and one for the new number.
@@ -171,12 +159,6 @@ choose_a_subset
 As a first argument it is required an array which provides the available list.
 
 The optional second argument is a hash. The following options are available:
-
-  * clear_screen
-
-If enabled, the screen is cleared before the output.
-
-Values: 0,[1].
 
   * current
 
