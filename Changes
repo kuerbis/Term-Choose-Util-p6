@@ -1,6 +1,10 @@
 Revision history for Term::Choose::Util
 
 
+0.004   2016-03-01
+        - Use 'NCurses'
+        - Pass a global ncurses-win to Term::Choose
+
 0.003   2016-02-25
         - Renamed 'change_config' to 'settings_menu'
         - Compatible to Term::Choose version 0.100

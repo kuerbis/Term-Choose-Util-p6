@@ -1,8 +1,9 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.003';
+my $VERSION = '0.004';
 
+use NCurses;
 use Term::Choose;
 use Term::Choose::LineFold :all;
 
@@ -15,6 +16,11 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
     my IO::Path $previous = $dir;
     my @pre = ( Any, %o<confirm>, %o<add_dir>, %o<up> );
     my Int $default_idx = %o<enchanted> ?? @pre.end !! 0;
+    my NCurses::WINDOW $win = initscr();
+    my $tc = Term::Choose.new( 
+        { undef => %o<back>, mouse => %o<mouse>, justify => %o<justify>, layout => %o<layout>, order => %o<order> },
+        $win
+    );
 
     loop {
         my IO::Path @dirs;
@@ -28,7 +34,10 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
             CATCH { #
                 my $prompt = $dir.gist ~ ":\n" ~ $_;
                 pause( [ 'Press ENTER to continue.' ], { prompt => $prompt } );
-                return [] if $dir.Str eq '/';
+                if $dir.Str eq '/' {
+                    endwin();
+                    return [];
+                }
                 $dir = $dir.dirname.IO;
                 next;
             }
@@ -52,18 +61,21 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
         $prompt ~= line_fold( $key_cwd ~ $previous, term_width(), '', ' ' x $key_cwd.chars );
         $prompt ~= "\n";
         # Choose
-        my $choice = choose(
+        my $choice = $tc.choose(
             [ |@pre, |@dirs.sort ],
-            { prompt => $prompt, undef => %o<back>, default => $default_idx, mouse => %o<mouse>,
-              justify => %o<justify>, layout => %o<layout>, order => %o<order> }
+            { prompt => $prompt, default => $default_idx }
         );
         if ! $choice.defined {
-            return [] if ! @chosen_dirs.elems;
+            if ! @chosen_dirs.elems {
+                endwin();
+                return [];
+            }
             @chosen_dirs = [];
             next;
         }
         $default_idx = %o<enchanted>  ?? @pre.end !! 0;
         if $choice eq %o<confirm> {
+            endwin();
             return @chosen_dirs;
         }
         elsif $choice eq %o<add_dir> {
@@ -131,6 +143,11 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
     my Str $curr          = %o<current> // Str;
     my IO::Path $dir      = %o<dir>;
     my IO::Path $previous = $dir;
+    my NCurses::WINDOW $win = initscr();
+    my $tc = Term::Choose.new(
+        { undef => %o<back>, mouse => %o<mouse>, justify => %o<justify>, layout => %o<layout>, order => %o<order> },
+        $win
+    );
 
     loop {
         my IO::Path @dirs;
@@ -144,7 +161,10 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
             CATCH { #
                 my $prompt = $dir.gist ~ ":\n" ~ $_;
                 pause( [ 'Press ENTER to continue.' ], { prompt => $prompt } );
-                return [] if $dir.Str eq '/'; # []
+                if $dir.Str eq '/' {
+                    endwin();
+                    return [];
+                }
                 $dir = $dir.dirname.IO;
                 next;
             }
@@ -158,20 +178,22 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
             $prompt ~= sprintf "%11s: \"%s\"\n\n",   'New dir', $dir;
         }
         # Choose
-        my $choice = choose(
+        my $choice = $tc.choose(
             [ |@pre, |@dirs.sort ],
-            { prompt => $prompt, undef => %o<back>, default => $default_idx, mouse => %o<mouse>,
-              justify => %o<justify>, layout => %o<layout>, order => %o<order> }
+            { prompt => $prompt, default => $default_idx }
         );
         if ! $choice.defined {
+            endwin();
             return;
         }
         elsif $choice eq %o<confirm> {
+            endwin();
             return $previous;
         }
         elsif $choice eq %o<file> {
-            my IO::Path $file = _a_file( %o, $dir ) // IO::Path;
-            next if ! $file.defined; ### 
+            my IO::Path $file = _a_file( %o, $dir, $tc ) // IO::Path;
+            next if ! $file.defined; ###
+            endwin();
             return $file;
         }
         if $choice eq %o<up> {
@@ -190,7 +212,7 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
     }
 }
 
-sub _a_file ( %o, IO::Path $dir --> IO::Path ) {
+sub _a_file ( %o, IO::Path $dir, $tc --> IO::Path ) {
     my IO::Path @files;
     try {
         if %o<show_hidden> {
@@ -212,10 +234,9 @@ sub _a_file ( %o, IO::Path $dir --> IO::Path ) {
     }
     my Str $prompt = sprintf 'Files in %s:', $dir;
     # Choose
-    my $choice = choose(
+    my $choice = $tc.choose(
         [ Any, |@files.sort ],
-        { prompt => $prompt, undef => %o<back>, mouse => %o<mouse>,
-          justify => %o<justify>, layout => %o<layout>, order => %o<order> }
+        { prompt => $prompt }
     );
     return if ! $choice.defined;
     return $*SPEC.catfile( $dir, $choice ).IO;
@@ -260,6 +281,11 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
     $name = ' ' ~ $name if $name;
     my $fmt_cur = "Current{$name}: %{$longest}s\n";
     my $fmt_new = "    New{$name}: %{$longest}s\n";
+    my NCurses::WINDOW $win = initscr();
+    my $tc = Term::Choose.new(
+        { mouse => %opt<mouse> },
+        $win
+    );
 
     NUMBER: loop {
         my Str $new_number = $result // $undef;
@@ -282,9 +308,9 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
         }
         my @pre = ( Any, $confirm );
         # Choose
-        my $range = choose(
+        my $range = $tc.choose(
             [ |@pre, |@ranges ],
-            { prompt => $prompt, layout => 2, justify => 1, mouse => $mouse, undef => $back }
+            { prompt => $prompt, layout => 2, justify => 1, undef => $back }
         );
         if ! $range.defined {
             if $result.defined {
@@ -292,16 +318,16 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
                 next NUMBER;
             }
             else {
+                endwin();
                 return;
             }
         }
         elsif $range eq $confirm {
+            endwin();
             if ! $result.defined {
                 return;
             }
-            if $sep ne '' {
-                $result.=subst( / $sep /, '', :g );
-            }
+            $result.=subst( / $sep /, '', :g ) if $sep ne '';
             return $result.Int;
         }
         my Str $begin = ( $range.split( / \s+ '-' \s+ / ) )[0];
@@ -316,9 +342,9 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
         my Str $reset = 'reset';
         my Str $back_short = '<<';
         # Choose
-        my $num = choose(
+        my $num = $tc.choose(
             [ Any, |@choices, $reset ],
-            { prompt => $prompt, layout => 1, justify => 2, order => 0, mouse => $mouse, undef => $back_short }
+            { prompt => $prompt, layout => 1, justify => 2, order => 0, undef => $back_short }
         );
         if ! $num.defined {
             next;
@@ -359,19 +385,24 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
     my Int $len_key = $key_cur.chars > $key_new.chars ?? $key_cur.chars !! $key_new.chars;
     my @new_idx;
     my @new_val;
+    my @pre = ( Any, $confirm );
+    my NCurses::WINDOW $win = initscr();
+    my $tc = Term::Choose.new(
+        { layout => $layout, mouse => $mouse, justify => $justify, order => $order,
+          no_spacebar => [ 0 .. @pre.end ], undef => $back, lf => [ 0, $len_key ] },
+        $win
+    );
 
     loop {
         my Str $lines = '';
         $lines ~= $key_cur ~ @current.join( ', ' ).map( { "\"$_\"" } ) ~ "\n"   if @current.elems;
         $lines ~= $key_new ~ @new_val.join( ', ' ).map( { "\"$_\"" } ) ~ "\n\n";
         $lines ~= $prompt;
-        my @pre = ( Any, $confirm );
         my Str @avail_with_prefix = @available.map( { $prefix ~ $_ } );
         # Choose
-        my Int @idx = choose_multi(
+        my Int @idx = $tc.choose_multi(
             [ |@pre, |@avail_with_prefix  ],
-            { prompt => $lines, layout => $layout, mouse => $mouse, justify => $justify, index => 1,
-              order => $order, no_spacebar => [ 0 .. @pre.end ], undef => $back, lf => [ 0, $len_key ] }
+            { prompt => $lines, index => 1 }
         );
         if ! @idx[0] { #
             if @new_idx.elems {
@@ -380,6 +411,7 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
                 next;
             }
             else {
+                endwin();
                 return [];
             }
         }
@@ -387,6 +419,7 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
             @idx.shift;
             @new_val.append( @available[@idx >>->> @pre.elems] ); # map
             @new_idx.append( @idx >>->> @pre.elems );
+            endwin();
             return $index ?? @new_idx !! @new_val;
         }
         @new_val.append( @available[@idx >>->> @pre.elems] );
@@ -435,6 +468,12 @@ sub settings_menu ( @menu, %setup, %opt? ) is export( :all ) {
     }
     my $no_change = %opt<in_place> ?? 0 !! {};
     my $count = 0;
+    my NCurses::WINDOW $win = initscr();
+    my $tc = Term::Choose.new(
+        { prompt => $prompt, layout => 2, justify => 0, 
+          mouse => $mouse, undef => $back },
+        $win
+    );
 
     loop {
         my Str @print_keys;
@@ -446,16 +485,17 @@ sub settings_menu ( @menu, %setup, %opt? ) is export( :all ) {
         my @pre = ( Any, $confirm );
         my @choices = |@pre, |@print_keys;
         # Choose
-        my Int $idx = choose(
+        my Int $idx = $tc.choose( 
             @choices,
-            { prompt => $prompt, layout => 2, justify => 0, 
-              mouse => $mouse, index => 1, undef => $back }
+            { index => 1 }
         );
         if ! $idx.defined {
+            endwin();
             return $no_change;
         }
         my $choice = @choices[$idx];
         if ! $choice.defined {
+            endwin();
             return $no_change;
         }
         elsif $choice eq $confirm {
@@ -472,6 +512,7 @@ sub settings_menu ( @menu, %setup, %opt? ) is export( :all ) {
                     $change++;
                 }
             }
+            endwin();
             return $no_change if ! $change;
             return 1          if $in_place;
             return %new_setup;
@@ -585,7 +626,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.003
+Version 0.004
 
 =head1 DESCRIPTION
 
