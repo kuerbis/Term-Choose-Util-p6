@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.004';
+my $VERSION = '0.005';
 
 use NCurses;
 use Term::Choose;
@@ -626,9 +626,11 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.004
+Version 0.005
 
 =head1 DESCRIPTION
+
+C<Term::Choose::Util> currently supports only ascii-characters strings.
 
 This module provides some CLI related functions.
 
