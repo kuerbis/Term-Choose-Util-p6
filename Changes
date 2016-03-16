@@ -1,5 +1,12 @@
 Revision history for Term::Choose::Util
 
+
+0.006   2016-03-16
+        - setlocale to support non-ascii strings
+        - Requires Term::Choose::NCurses
+        - 'choose_dirs': cd to the parent dir after adding a dir
+        - Update documentation
+
 0.005   2016-03-10
         - Update documentation
 

@@ -1,12 +1,20 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.005';
+my $VERSION = '0.006';
 
-use NCurses;
 use Term::Choose;
+use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
 
+
+
+sub _ncurses_win {
+    my int32 constant LC_ALL = 6; # From locale.h
+    setlocale(LC_ALL, "");
+    my Term::Choose::NCurses::WINDOW $win = initscr();
+    return $win;
+}
 
 
 sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
@@ -16,10 +24,9 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
     my IO::Path $previous = $dir;
     my @pre = ( Any, %o<confirm>, %o<add_dir>, %o<up> );
     my Int $default_idx = %o<enchanted> ?? @pre.end !! 0;
-    my NCurses::WINDOW $win = initscr();
-    my $tc = Term::Choose.new( 
+    my $tc = Term::Choose.new(
         { undef => %o<back>, mouse => %o<mouse>, justify => %o<justify>, layout => %o<layout>, order => %o<order> },
-        $win
+        _ncurses_win()
     );
 
     loop {
@@ -80,6 +87,9 @@ sub choose_dirs ( %opt? ) is export( :MANDATORY ) {
         }
         elsif $choice eq %o<add_dir> {
             @chosen_dirs.push( $previous );
+            $dir = $dir.dirname.IO;
+            $default_idx = 0 if $previous eq $dir;
+            $previous = $dir;
             next;
         }
         $dir = $choice eq %o<up> ?? $dir.dirname.IO !! $choice.IO;
@@ -143,10 +153,9 @@ sub _choose_a_path ( %opt, Int $is_a_file --> IO::Path ) {
     my Str $curr          = %o<current> // Str;
     my IO::Path $dir      = %o<dir>;
     my IO::Path $previous = $dir;
-    my NCurses::WINDOW $win = initscr();
     my $tc = Term::Choose.new(
         { undef => %o<back>, mouse => %o<mouse>, justify => %o<justify>, layout => %o<layout>, order => %o<order> },
-        $win
+        _ncurses_win()
     );
 
     loop {
@@ -281,10 +290,9 @@ sub choose_a_number ( Int $digits, %opt? ) is export( :MANDATORY ) {
     $name = ' ' ~ $name if $name;
     my $fmt_cur = "Current{$name}: %{$longest}s\n";
     my $fmt_new = "    New{$name}: %{$longest}s\n";
-    my NCurses::WINDOW $win = initscr();
     my $tc = Term::Choose.new(
         { mouse => %opt<mouse> },
-        $win
+        _ncurses_win()
     );
 
     NUMBER: loop {
@@ -386,11 +394,10 @@ sub choose_a_subset ( @available, %opt? ) is export( :MANDATORY ) {
     my @new_idx;
     my @new_val;
     my @pre = ( Any, $confirm );
-    my NCurses::WINDOW $win = initscr();
     my $tc = Term::Choose.new(
         { layout => $layout, mouse => $mouse, justify => $justify, order => $order,
           no_spacebar => [ 0 .. @pre.end ], undef => $back, lf => [ 0, $len_key ] },
-        $win
+        _ncurses_win()
     );
 
     loop {
@@ -468,11 +475,10 @@ sub settings_menu ( @menu, %setup, %opt? ) is export( :all ) {
     }
     my $no_change = %opt<in_place> ?? 0 !! {};
     my $count = 0;
-    my NCurses::WINDOW $win = initscr();
     my $tc = Term::Choose.new(
         { prompt => $prompt, layout => 2, justify => 0, 
           mouse => $mouse, undef => $back },
-        $win
+        _ncurses_win()
     );
 
     loop {
@@ -526,7 +532,7 @@ sub settings_menu ( @menu, %setup, %opt? ) is export( :all ) {
 }
 
 
-sub term_size ( IO::Handle $handle_out = $*IN ) is export( :all ) {
+sub term_size ( IO::Handle $handle_out = $*IN ) is export( :all ) { #
     my Str $stty = qx[stty -a]; #
     my Int $height = $stty.match( / 'rows '    <( \d+ )>/ ).Int;
     my Int $width  = $stty.match( / 'columns ' <( \d+ )>/ ).Int;
@@ -534,7 +540,7 @@ sub term_size ( IO::Handle $handle_out = $*IN ) is export( :all ) {
 }
 
 
-sub term_width ( IO::Handle $handle_out = $*IN ) is export( :all ) {
+sub term_width ( IO::Handle $handle_out = $*IN ) is export( :all ) { #
     return( ( term_size( $handle_out ) )[0] );
 }
 
@@ -626,11 +632,9 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.005
+Version 0.006
 
 =head1 DESCRIPTION
-
-C<Term::Choose::Util> currently supports only ascii-characters strings.
 
 This module provides some CLI related functions.
 

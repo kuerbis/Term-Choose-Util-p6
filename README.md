@@ -8,12 +8,10 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.005
+Version 0.006
 
 DESCRIPTION
 ===========
-
-`Term::Choose::Util` currently supports only ascii-characters strings.
 
 This module provides some CLI related functions.
 

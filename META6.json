@@ -8,8 +8,8 @@
     "Term::Choose::Util" : "lib/Term/Choose/Util.pm6"
   },
   "depends" : [
-    "NCurses",
     "Term::Choose",
+    "Term::Choose::NCurses",
     "Term::Choose::LineFold"
   ],
   "description" : "CLI related functions.",
