@@ -8,7 +8,7 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.007
+Version 0.008
 
 DESCRIPTION
 ===========

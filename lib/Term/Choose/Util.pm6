@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.007';
+my $VERSION = '0.008';
 
 use Term::Choose;
 use Term::Choose::NCurses :all;
@@ -602,10 +602,11 @@ sub print_hash ( %hash, %opt? ) is export( :all ) {
         {},
         $win
     );
-    pause(
+    $tc.pause(
         @vals,
         { prompt => $prompt, layout => 2, justify => 0, mouse => $mouse, empty => ' ' }
     );
+    endwin();
 }
 
 
@@ -642,7 +643,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.007
+Version 0.008
 
 =head1 DESCRIPTION
 
