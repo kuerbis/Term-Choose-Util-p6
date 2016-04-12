@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.010';
+my $VERSION = '0.011';
 
 use Term::Choose;
 use Term::Choose::NCurses :all;
@@ -728,7 +728,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.010
+Version 0.011
 
 =head1 DESCRIPTION
 
@@ -767,8 +767,7 @@ If set, C<choose_a_dir> shows I<current> as the current directory.
 
 =item1 dir
 
-Set the starting point directory. Defaults to the home directory or the current working directory if the home directory
-cannot be found.
+Set the starting point directory. Defaults to the home directory (C<$*HOME>).
 
 =item1 enchanted
 

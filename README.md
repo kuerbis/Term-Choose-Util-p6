@@ -8,7 +8,7 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.010
+Version 0.011
 
 DESCRIPTION
 ===========
@@ -45,7 +45,7 @@ If set, `choose_a_dir` shows *current* as the current directory.
 
   * dir
 
-Set the starting point directory. Defaults to the home directory or the current working directory if the home directory cannot be found.
+Set the starting point directory. Defaults to the home directory (`$*HOME`).
 
   * enchanted
 
