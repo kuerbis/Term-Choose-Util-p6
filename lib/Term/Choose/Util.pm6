@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.014';
+my $VERSION = '0.015';
 
 use Term::Choose;
 use Term::Choose::NCurses :all;
@@ -42,7 +42,7 @@ method !_init_term {
 
 method !_end_term {
     return if $!g_win;
-    self!_end_term();
+    endwin();
 }
 
 sub _prepare_options ( %opt, %valid, %defaults ) {
@@ -780,7 +780,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.014
+Version 0.015
 
 =head1 DESCRIPTION
 

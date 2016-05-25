@@ -1,6 +1,9 @@
 Revision history for Term::Choose::Util
 
 
+0.015   2016-05-25
+        - Bugfix in 'end_term'
+
 0.014   2016-05-25
         - Added OO-interface with a ncurses win attribute.
 
