@@ -8,15 +8,17 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.013
+Version 0.014
 
 DESCRIPTION
 ===========
 
 This module provides some CLI related functions.
 
-SUBROUTINES
-===========
+ROUTINES
+========
+
+It is also availabe an OO-interface.
 
 Values in brackets are default values.
 
