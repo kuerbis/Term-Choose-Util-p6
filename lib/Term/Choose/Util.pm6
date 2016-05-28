@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.015';
+my $VERSION = '0.016';
 
 use Term::Choose;
 use Term::Choose::NCurses :all;
@@ -32,12 +32,6 @@ method !_init_term {
         setlocale( LC_ALL, "" );
         $!win = initscr;
     }
-#    noecho();
-#    cbreak;
-#    keypad( $!win, True );
-    my Array[int32] $old;
-    my $s = mousemask( ALL_MOUSE_EVENTS +| REPORT_MOUSE_POSITION, $old );
-    curs_set( 0 );
 }
 
 method !_end_term {
@@ -780,15 +774,13 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.015
+Version 0.016
 
 =head1 DESCRIPTION
 
 This module provides some CLI related functions.
 
 =head1 ROUTINES
-
-It is also availabe an OO-interface.
 
 Values in brackets are default values.
 
