@@ -1,11 +1,11 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.016';
+my $VERSION = '0.017';
 
 use Term::Choose;
-use Term::Choose::NCurses :all;
-use Term::Choose::LineFold :all;
+use Term::Choose::NCurses;
+use Term::Choose::LineFold;
 
 
 has %.o_global;
@@ -99,7 +99,7 @@ sub _my_array_gist ( @array ) {
 }
 
 
-sub choose-dirs ( %opt? ) is export( :DEFAULT, :all, :choose-dirs ) { return Term::Choose::Util.new().choose-dirs( %opt ) }
+sub choose-dirs ( %opt? ) is export { return Term::Choose::Util.new().choose-dirs( %opt ) }
 
 method choose-dirs ( %opt? ) {
     my %o = _prepare_options( 
@@ -192,13 +192,13 @@ method choose-dirs ( %opt? ) {
 }
 
 
-sub choose-a-dir ( %opt? --> IO::Path ) is export( :DEFAULT, :all, :choose-a-dir ) {
+sub choose-a-dir ( %opt? --> IO::Path ) is export {
     Term::Choose::Util.new._choose_a_path( %opt, 0 );
 }
 method choose-a-dir ( %opt? --> IO::Path ) { self!_choose_a_path( %opt, 0 ) }
 
 
-sub choose-a-file ( %opt? --> IO::Path ) is export( :DEFAULT, :all, :choose-a-file ) { 
+sub choose-a-file ( %opt? --> IO::Path ) is export { 
     Term::Choose::Util.new._choose_a_path( %opt, 1 )
 }
 method choose-a-file ( %opt? --> IO::Path ) { self!_choose_a_path( %opt, 1 ) }
@@ -322,7 +322,7 @@ sub _a_file ( %o, IO::Path $dir, $tc --> IO::Path ) {
 }
 
 
-sub choose-a-number ( Int $digits, %opt? ) is export( :DEFAULT, :all, :choose-a-number ) {
+sub choose-a-number ( Int $digits, %opt? ) is export {
     Term::Choose::Util.new.choose-a-number( $digits, %opt );
 }
 
@@ -454,7 +454,7 @@ method choose-a-number ( Int $digits, %opt? ) {
 }
 
 
-sub choose-a-subset ( @available, %opt? ) is export( :DEFAULT, :all, :choose-a-subset ) {
+sub choose-a-subset ( @available, %opt? ) is export {
     Term::Choose::Util.new().choose-a-subset( @available, %opt );
 }
 
@@ -558,7 +558,7 @@ my $changed = settings_menu( @menu, %config, { in-place => 1 } );
 >>>
 
 
-sub settings-menu ( @menu, %setup, %opt? ) is export( :all, :settings-menu ) {
+sub settings-menu ( @menu, %setup, %opt? ) is export {
     Term::Choose::Util.new().settings-menu( @menu, %setup, %opt );
 }
 
@@ -646,7 +646,7 @@ method settings-menu ( @menu, %setup, %opt? ) {
 }
 
 
-sub term-size ( IO::Handle $handle_out = $*IN ) is export( :all, :term-size ) { #
+sub term-size ( IO::Handle $handle_out = $*IN ) is export { #
     my Str $stty = qx[stty -a]; #
     my Int $height = $stty.match( / 'rows '    <( \d+ )>/ ).Int;
     my Int $width  = $stty.match( / 'columns ' <( \d+ )>/ ).Int;
@@ -654,12 +654,12 @@ sub term-size ( IO::Handle $handle_out = $*IN ) is export( :all, :term-size ) { 
 }
 
 
-sub term-width ( IO::Handle $handle_out = $*IN ) is export( :all, :term-width ) { #
+sub term-width ( IO::Handle $handle_out = $*IN ) is export { #
     return( ( term-size( $handle_out ) )[0] );
 }
 
 
-sub insert-sep ( $num, $sep = ' ' ) is export( :all, :insert-sep ) {
+sub insert-sep ( $num, $sep = ' ' ) is export {
     return $num if ! $num.defined;
     return $num if $num ~~ /$sep/;
     my token sign { <[+-]> }
@@ -676,7 +676,7 @@ sub insert-sep ( $num, $sep = ' ' ) is export( :all, :insert-sep ) {
 }
 
 
-sub print-hash ( %hash, %opt? ) is export( :all, :print-hash ) {
+sub print-hash ( %hash, %opt? ) is export {
     Term::Choose::Util.new().print-hash( %hash, %opt );
 }
 
@@ -741,7 +741,7 @@ method print-hash ( %hash, %opt? ) {
 }
 
 
-sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $justify ) is export( :all, :unicode-sprintf ) {
+sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $justify ) is export {
     my Int $str_length = print-columns( $str );
     if $str_length > $avail_col_w {
         return cut-to-printwidth( $str, $avail_col_w );
@@ -774,7 +774,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.016
+Version 0.017
 
 =head1 DESCRIPTION
 
