@@ -1,6 +1,9 @@
 Revision history for Term::Choose::Util
 
 
+0.018   2016-12-10
+        - Constructor: named parameters
+
 0.017   2016-10-13
         - Bugfix export subroutines
 
