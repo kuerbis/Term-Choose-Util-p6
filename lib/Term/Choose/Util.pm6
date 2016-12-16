@@ -1,11 +1,11 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.018';
+my $VERSION = '0.019';
 
-use Term::Choose;
+use Term::Choose           :choose, :choose-multi, :pause;
 use Term::Choose::NCurses;
-use Term::Choose::LineFold;
+use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
 
 
 has %.defaults;
@@ -100,7 +100,7 @@ sub _my_array_gist ( @array ) {
 }
 
 
-sub choose-dirs ( %opt? ) is export { return Term::Choose::Util.new().choose-dirs( %opt ) }
+sub choose-dirs ( %opt? ) is export( :DEFAULT, :choose-dirs ) { return Term::Choose::Util.new().choose-dirs( %opt ) }
 
 method choose-dirs ( %opt? ) {
     my %o = _prepare_options( 
@@ -193,13 +193,13 @@ method choose-dirs ( %opt? ) {
 }
 
 
-sub choose-a-dir ( %opt? --> IO::Path ) is export {
+sub choose-a-dir ( %opt? --> IO::Path ) is export( :DEFAULT, :choose-a-dir ) {
     Term::Choose::Util.new()!_choose_a_path( %opt, 0 );
 }
 method choose-a-dir ( %opt? --> IO::Path ) { self!_choose_a_path( %opt, 0 ) }
 
 
-sub choose-a-file ( %opt? --> IO::Path ) is export { 
+sub choose-a-file ( %opt? --> IO::Path ) is export( :DEFAULT, :choose-a-file ) { 
     Term::Choose::Util.new()!_choose_a_path( %opt, 1 )
 }
 method choose-a-file ( %opt? --> IO::Path ) { self!_choose_a_path( %opt, 1 ) }
@@ -308,11 +308,11 @@ sub _a_file ( %o, IO::Path $dir, $tc --> IO::Path ) {
         }
     }
     if ! @files.elems {
-        my $prompt =  $dir.Str ~ ": no files.";
+        my $prompt =  "Dir: $dir\nChoose a file: no files.";
         pause( [ ' < ' ], { prompt => $prompt } );
         return;
     }
-    my Str $prompt = sprintf '"%s":', $dir;
+    my Str $prompt = "Dir: $dir\nChoose a file:";
     # Choose
     my $choice = $tc.choose(
         [ Any, |@files.sort ],
@@ -323,7 +323,7 @@ sub _a_file ( %o, IO::Path $dir, $tc --> IO::Path ) {
 }
 
 
-sub choose-a-number ( Int $digits, %opt? ) is export {
+sub choose-a-number ( Int $digits, %opt? ) is export( :DEFAULT, :choose-a-number ) {
     Term::Choose::Util.new().choose-a-number( $digits, %opt );
 }
 
@@ -455,7 +455,7 @@ method choose-a-number ( Int $digits, %opt? ) {
 }
 
 
-sub choose-a-subset ( @available, %opt? ) is export {
+sub choose-a-subset ( @available, %opt? ) is export( :DEFAULT, :choose-a-subset ) {
     Term::Choose::Util.new().choose-a-subset( @available, %opt );
 }
 
@@ -559,7 +559,7 @@ my $changed = settings_menu( @menu, %config, { in-place => 1 } );
 >>>
 
 
-sub settings-menu ( @menu, %setup, %opt? ) is export {
+sub settings-menu ( @menu, %setup, %opt? ) is export( :settings-menu ) {
     Term::Choose::Util.new().settings-menu( @menu, %setup, %opt );
 }
 
@@ -647,7 +647,7 @@ method settings-menu ( @menu, %setup, %opt? ) {
 }
 
 
-sub term-size ( IO::Handle $handle_out = $*IN ) is export { #
+sub term-size ( IO::Handle $handle_out = $*IN ) is export( :term-size ) { #
     my Str $stty = qx[stty -a]; #
     my Int $height = $stty.match( / 'rows '    <( \d+ )>/ ).Int;
     my Int $width  = $stty.match( / 'columns ' <( \d+ )>/ ).Int;
@@ -655,12 +655,12 @@ sub term-size ( IO::Handle $handle_out = $*IN ) is export { #
 }
 
 
-sub term-width ( IO::Handle $handle_out = $*IN ) is export { #
+sub term-width ( IO::Handle $handle_out = $*IN ) is export( :DEFAULT, :term-width ) { #
     return( ( term-size( $handle_out ) )[0] );
 }
 
 
-sub insert-sep ( $num, $sep = ' ' ) is export {
+sub insert-sep ( $num, $sep = ' ' ) is export( :insert-sep ) {
     return $num if ! $num.defined;
     return $num if $num ~~ /$sep/;
     my token sign { <[+-]> }
@@ -677,7 +677,7 @@ sub insert-sep ( $num, $sep = ' ' ) is export {
 }
 
 
-sub print-hash ( %hash, %opt? ) is export {
+sub print-hash ( %hash, %opt? ) is export( :print-hash ) {
     Term::Choose::Util.new().print-hash( %hash, %opt );
 }
 
@@ -741,10 +741,10 @@ method print-hash ( %hash, %opt? ) {
 }
 
 
-sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $justify ) is export {
+sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $justify ) is export( :unicode-sprintf ) {
     my Int $str_length = print-columns( $str );
     if $str_length > $avail_col_w {
-        return cut-to-printwidth( $str, $avail_col_w );
+        return to-printwidth( $str, $avail_col_w );
     }
     elsif $str_length < $avail_col_w {
         if $justify == 0 {
@@ -774,11 +774,16 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.018
+Version 0.019
 
 =head1 DESCRIPTION
 
 This module provides some CLI related functions.
+
+=head1 FUNCTIONAL INTERFACE
+
+Importing the subroutines explicitly (C<:name_of_the_subroutine>) might become compulsory (optional for now) with the
+next release.
 
 =head1 CONSTRUCTOR
 
