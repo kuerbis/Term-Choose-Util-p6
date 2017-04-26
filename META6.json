@@ -10,6 +10,7 @@
   ],
   "description" : "CLI related functions.",
   "name" : "Term::Choose::Util",
+  "license" : "Artistic-2.0",
   "perl" : "6.c",
   "provides" : {
     "Term::Choose::Util" : "lib/Term/Choose/Util.pm6"
