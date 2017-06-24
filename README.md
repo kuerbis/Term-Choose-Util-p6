@@ -8,7 +8,7 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.024
+Version 0.025
 
 DESCRIPTION
 ===========
@@ -127,7 +127,7 @@ choose-dirs
 
 The "back"-menu-entry ( "`E<lt> `" ) resets the list of chosen directories if any. If the list of chosen directories is empty, "`E<lt> `" causes `choose-dirs` to return nothing.
 
-`choose-dirs` uses the same option as `choose-a-dir`. The option *current* expects as its value an array (directories shown as the current directories).
+`choose-dirs` uses the same option as `choose-a-dir`. The option *current* expects as its value an lisi (directories shown as the current directories).
 
 choose-a-number
 ---------------
@@ -172,13 +172,13 @@ choose-a-subset
 
 `choose-a-subset` lets you choose a subset from a list.
 
-As a first argument it is required an array which provides the available list.
+The first argument is the list of choices.
 
 The optional second argument is a hash. The following options are available:
 
   * current
 
-This option expects as its value the current subset of the available list (array). If set, two prompt lines are displayed - one for the current subset and one for the new subset. Even if the option *index* is true the passed current subset is made of values and not of indexes.
+This option expects as its value the current subset of the available list. If set, two prompt lines are displayed - one for the current subset and one for the new subset. Even if the option *index* is true the passed current subset is made of values and not of indexes.
 
 The subset is returned as an array.
 

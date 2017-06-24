@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.024';
+my $VERSION = '0.025';
 
 use Term::Choose           :choose, :choose-multi, :pause;
 use Term::Choose::NCurses;
@@ -48,8 +48,8 @@ sub _prepare_options ( %opt, %valid, %defaults ) {
         when ! $value.defined {
             next;
         }
-        when %valid{$key} eq 'Array' {
-            die "$key => {$value.perl} is not an ARRAY."  if ! $value.isa( Array );
+        when %valid{$key} eq 'List' {
+            die "$key => {$value.perl} is not an List."  if ! $value.isa( List );
         }
         when %valid{$key} eq 'Str' {
              die "$key => {$value.perl} is not a string." if ! $value.isa( Str );
@@ -110,7 +110,7 @@ sub choose-dirs ( %opt? ) is export( :DEFAULT, :choose-dirs ) { return Term::Cho
 method choose-dirs ( %opt? ) {
     my %o = _prepare_options( 
         %opt,
-        _path_valid_opt( { current => 'Array' } ),
+        _path_valid_opt( { current => 'List' } ),
         self!_path_defaults( { current => [] } )
     );
     my @chosen_dirs;
@@ -472,7 +472,7 @@ method choose-a-subset ( @available, %opt? ) {
             order     => '<[ 0 1 ]>',
             justify   => '<[ 0 1 2 ]>',
             layout    => '<[ 0 1 2 ]>',
-            current   => 'Array',
+            current   => 'List',
             prefix    => 'Str',
             prompt    => 'Str',
         },
@@ -682,7 +682,7 @@ method print-hash ( %hash, %opt? ) {
             maxcols      => '<[ 1 .. 9 ]><[ 0 .. 9 ]>*',
             left-margin  => '<[ 0 .. 9 ]>+',
             right-margin => '<[ 0 .. 9 ]>+',
-            keys         => 'Array',
+            keys         => 'List',
             preface      => 'Str',
             prompt       => 'Str',
         },
@@ -766,7 +766,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.024
+Version 0.025
 
 =head1 DESCRIPTION
 
@@ -898,7 +898,7 @@ directories.
 The "back"-menu-entry ( "C< E<lt> >" ) resets the list of chosen directories if any. If the list of chosen directories
 is empty, "C< E<lt> >" causes C<choose-dirs> to return nothing.
 
-C<choose-dirs> uses the same option as C<choose-a-dir>. The option I<current> expects as its value an array (directories
+C<choose-dirs> uses the same option as C<choose-a-dir>. The option I<current> expects as its value an lisi (directories
 shown as the current directories).
 
 =head2 choose-a-number
@@ -951,15 +951,15 @@ Default: comma (,).
 
 C<choose-a-subset> lets you choose a subset from a list.
 
-As a first argument it is required an array which provides the available list.
+The first argument is the list of choices.
 
 The optional second argument is a hash. The following options are available:
 
 =item1 current
 
-This option expects as its value the current subset of the available list (array). If set, two prompt lines are
-displayed - one for the current subset and one for the new subset. Even if the option I<index> is true the passed
-current subset is made of values and not of indexes.
+This option expects as its value the current subset of the available list. If set, two prompt lines are displayed - one
+for the current subset and one for the new subset. Even if the option I<index> is true the passed current subset is made
+of values and not of indexes.
 
 The subset is returned as an array.
 
