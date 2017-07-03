@@ -4,6 +4,7 @@
   ],
   "build-depends" : [ ],
   "depends" : [
+    "NCurses",
     "Term::Choose"
   ],
   "description" : "CLI related functions.",

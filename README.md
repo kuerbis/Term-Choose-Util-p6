@@ -8,7 +8,7 @@ Term::Choose::Util - CLI related functions.
 VERSION
 =======
 
-Version 0.026
+Version 0.027
 
 DESCRIPTION
 ===========
@@ -27,7 +27,11 @@ The constructor method `new` can be called with optional named arguments:
 
   * defaults
 
-Sets the defaults for the instance. Valid options: `mouse`.
+Sets the defaults for the instance. Valid options (key/value pairs): `mouse`.
+
+  * win
+
+Expects as its value a `WINDOW` object - the return value of [NCurses](NCurses) `initscr`.
 
 If set, the following routines use this global window instead of creating their own without calling `endwin` to restores the terminal before returning.
 
@@ -130,14 +134,14 @@ choose-a-number
 
         my $current = 139;
         for ( 1 .. 3 ) {
-            $current = choose-a-number( 5, :$current, :name<Testnumber> ) );
+            $current = choose-a-number( 5, :$current, :name<Testnumber> );
         }
 
 This function lets you choose/compose a number (unsigned integer) which is returned.
 
 The fist argument - "digits" - is an integer and determines the range of the available numbers. For example setting the first argument to 6 would offer a range from 0 to 999999.
 
-The following arguments are the different options:
+The available options:
 
   * current
 

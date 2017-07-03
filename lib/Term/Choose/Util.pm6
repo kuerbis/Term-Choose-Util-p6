@@ -1,19 +1,20 @@
 use v6;
 unit class Term::Choose::Util;
 
-my $VERSION = '0.026';
+my $VERSION = '0.027';
 
+use NCurses;
+use Term::Choose::NCursesAdd;
 use Term::Choose           :choose, :choose-multi, :pause;
-use Term::Choose::NCurses;
 use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
 
 
 has %!defaults;
-has Term::Choose::NCurses::WINDOW $!win;
-has Term::Choose::NCurses::WINDOW $!win_local;
+has WINDOW $!win;
+has WINDOW $!win_local;
 
 
-method new ( :$defaults, :$win=Term::Choose::NCurses::WINDOW ) {
+method new ( :$defaults, :$win=WINDOW ) {
     self.bless( :$defaults, :$win );
 }
 
@@ -35,7 +36,7 @@ method !_init_term {
     else {
         my int32 constant LC_ALL = 6;
         setlocale( LC_ALL, "" );
-        $!win_local = initscr() or die "Failed to initialize ncurses\n";
+        $!win_local = initscr();
     }
 }
 
@@ -45,7 +46,7 @@ method !_end_term {
 }
 
 
-sub _prepare_options ( %opt, %valid, $defaults ) {
+sub _prepare_options ( %opt, %valid, %defaults ) {
     for %opt.kv -> $key, $value {
         when %valid{$key}:!exists {
             die "'$key' is not a valid option name";
@@ -70,7 +71,7 @@ sub _prepare_options ( %opt, %valid, $defaults ) {
     }
     my %o;
     for %valid.keys -> $key {
-        %o{$key} = %opt{$key} // $defaults{$key};
+        %o{$key} = %opt{$key} // %defaults{$key};
     }
     return %o;
 }
@@ -746,7 +747,7 @@ Term::Choose::Util - CLI related functions.
 
 =head1 VERSION
 
-Version 0.026
+Version 0.027
 
 =head1 DESCRIPTION
 
@@ -763,7 +764,11 @@ The constructor method C<new> can be called with optional named arguments:
 
 =item defaults
 
-Sets the defaults for the instance. Valid options: C<mouse>.
+Sets the defaults for the instance. Valid options (key/value pairs): C<mouse>.
+
+=item win
+
+Expects as its value a C<WINDOW> object - the return value of L<NCurses> C<initscr>.
 
 If set, the following routines use this global window instead of creating their own without calling C<endwin> to
 restores the terminal before returning.
@@ -882,7 +887,7 @@ shown as the current directories).
 
     my $current = 139;
     for ( 1 .. 3 ) {
-        $current = choose-a-number( 5, :$current, :name<Testnumber> ) );
+        $current = choose-a-number( 5, :$current, :name<Testnumber> );
     }
 
 =end code
@@ -892,7 +897,7 @@ This function lets you choose/compose a number (unsigned integer) which is retur
 The fist argument - "digits" - is an integer and determines the range of the available numbers. For example setting the
 first argument to 6 would offer a range from 0 to 999999.
 
-The following arguments are the different options:
+The available options:
 
 =item1 current
 
