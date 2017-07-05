@@ -1,7 +1,6 @@
 use v6;
-unit class Term::Choose::Util;
+unit class Term::Choose::Util:ver<0.0.1>;
 
-my $VERSION = '0.027';
 
 use NCurses;
 use Term::Choose::NCursesAdd;
@@ -744,10 +743,6 @@ sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $justify ) is export( :uni
 =head1 NAME
 
 Term::Choose::Util - CLI related functions.
-
-=head1 VERSION
-
-Version 0.027
 
 =head1 DESCRIPTION
 

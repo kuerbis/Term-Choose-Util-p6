@@ -5,11 +5,6 @@ NAME
 
 Term::Choose::Util - CLI related functions.
 
-VERSION
-=======
-
-Version 0.027
-
 DESCRIPTION
 ===========
 
