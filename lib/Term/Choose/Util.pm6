@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<0.0.1>;
+unit class Term::Choose::Util:ver<0.0.2>;
 
 
 use NCurses;
@@ -113,6 +113,9 @@ sub _my_array_gist ( @array ) {
 sub choose-dirs ( %deprecated?, *%opt ) is export( :DEFAULT, :choose-dirs ) { Term::Choose::Util.new().choose-dirs( %deprecated || %opt ) }
 
 method choose-dirs ( %deprecated?, *%opt ) {
+    CATCH {
+        endwin();
+    }
     my %o = _prepare_options( 
         %deprecated || %opt,
         _path_valid_opt( { current => 'List' } ),
@@ -213,6 +216,9 @@ method choose-a-file ( %deprecated?, *%opt --> IO::Path ) { self!_choose_a_path(
 
 
 method !_choose_a_path ( Int $is_a_file, %deprecated?, *%opt --> IO::Path ) {
+    CATCH {
+        endwin();
+    }
     my %o = _prepare_options( 
         %deprecated || %opt, 
         _path_valid_opt( $is_a_file ?? {} !! { current => 'Str' } ),
@@ -329,6 +335,9 @@ sub choose-a-number ( Int $digits, %deprecated?, *%opt ) is export( :DEFAULT, :c
 }
 
 method choose-a-number ( Int $digits, %deprecated?, *%opt ) {
+    CATCH {
+        endwin();
+    }
     my %o = _prepare_options(
         %deprecated || %opt,
         {   mouse    => '<[ 0 1 ]>',
@@ -455,6 +464,9 @@ sub choose-a-subset ( @available, %deprecated?, *%opt ) is export( :DEFAULT, :ch
 }
 
 method choose-a-subset ( @available, %deprecated?, *%opt ) {
+    CATCH {
+        endwin();
+    }
     my %o = _prepare_options(
         %deprecated || %opt,
         {   index     => '<[ 0 1 ]>',
@@ -556,6 +568,9 @@ sub settings-menu ( @menu, %setup, %deprecated?, *%opt ) is export( :settings-me
 }
 
 method settings-menu ( @menu, %setup, %deprecated?, *%opt ) {
+    CATCH {
+        endwin();
+    }
     my %o = _prepare_options(
         %deprecated || %opt,
         {   in-place => '<[ 0 1 ]>',
@@ -657,6 +672,9 @@ sub print-hash ( %hash, %deprecated?, *%opt ) is export( :print-hash ) {
 }
 
 method print-hash ( %hash, %deprecated?, *%opt ) {
+    CATCH {
+        endwin();
+    }
     self!_init_term();
     my %o = _prepare_options(
         %deprecated || %opt,
