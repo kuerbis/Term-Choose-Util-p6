@@ -1,6 +1,10 @@
 Revision history for Term::Choose::Util
 
 
+1.1.2   2018-08-24
+        - First upload to CPAN
+        - No changes
+
 1.1.1   2018-06-27
         - "no-spacebar" to "meta-items"
 
