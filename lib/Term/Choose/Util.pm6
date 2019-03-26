@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.2.1>;
+unit class Term::Choose::Util:ver<1.2.2>;
 
 use Term::Choose;
 use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
