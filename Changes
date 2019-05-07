@@ -1,6 +1,11 @@
 Revision history for Term::Choose::Util
 
 
+1.2.5   2019-05-07
+        - Bugfix values count in settings-menu.
+        - Bufix options init_term.
+        - Option loop.
+
 1.2.4   2019-04-02
         - Use the alternate screen by setting the option 'clear-screen' to 2.
 

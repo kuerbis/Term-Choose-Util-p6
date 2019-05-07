@@ -1,18 +1,18 @@
 use v6;
-unit class Term::Choose::Util:ver<1.2.4>;
+unit class Term::Choose::Util:ver<1.2.5>;
 
 use Term::Choose;
-use Term::Choose::LineFold :to-printwidth, :print-columns;
-use Term::Choose::Screen   :ALL;
+use Term::Choose::LineFold;
+use Term::Choose::Screen;
 
 has %!o;
 
 subset Int_0_to_2 of Int where * == 0|1|2;
 subset Int_0_or_1 of Int where * == 0|1;
 
-
 has Int_0_or_1 $.hide-cursor     = 1;
 has Int_0_or_1 $.index           = 0;
+has Int_0_or_1 $.loop            = 0;
 has Int_0_or_1 $.mouse           = 0;
 has Int_0_or_1 $.order           = 1;
 has Int_0_or_1 $.show-hidden     = 1;
@@ -42,15 +42,15 @@ has Str        $.choose-file     = ' >F ';
 has Term::Choose $!tc;
 
 
-method !_init_term ( $clear-screen, $mouse, $hide-cursor ) {
-    $!tc = Term::Choose.new( :$mouse, :1loop );
-    if $hide-cursor {
+method !_init_term {
+    $!tc = Term::Choose.new( :mouse( %!o<mouse> ), :1loop );
+    if %!o<hide-cursor> {
         hide-cursor();
     }
-    if $clear-screen == 2 {
+    if %!o<clear-screen> == 2 {
         save-screen;
     }
-    if $clear-screen {
+    if %!o<clear-screen> {
         clear;
     }
     else {
@@ -58,20 +58,20 @@ method !_init_term ( $clear-screen, $mouse, $hide-cursor ) {
     }
 }
 
-method !_end_term ( $clear-screen, $hide-cursor ) {
-    if $clear-screen == 2 {
+method !_end_term {
+    if %!o<clear-screen> == 2 {
         restore-screen;
     }
     else {
         clr-to-bot();
     }
-    if $hide-cursor {
+    if %!o<hide-cursor> && ! $!loop {
         show-cursor();
     }
 }
 
 
-sub _string_gist ( $_ ) { S:g/' '/\ / }
+sub _string_gist ( $_ ) { S:g/' '/\ / } # ?
 
 
 sub choose-dirs ( *%opt ) is export( :DEFAULT, :choose-dirs ) { Term::Choose::Util.new().choose-dirs( |%opt ) }
@@ -94,7 +94,8 @@ method choose-dirs (
         Str        :$add-dir      = $!add-dir,
         Str        :$up           = $!up,
     ) {
-    self!_init_term( $clear-screen, $mouse, $hide-cursor );
+    %!o = :$clear-screen, :$mouse, :$hide-cursor;
+    self!_init_term();
     my @chosen_dirs;
     my IO::Path $tmp_dir = $dir.IO;
     my IO::Path $previous = $tmp_dir;
@@ -114,7 +115,7 @@ method choose-dirs (
                 my $prompt = $tmp_dir.gist ~ ":\n" ~ $_;
                 $!tc.pause( [ 'Press ENTER to continue.' ], :$prompt );
                 if $tmp_dir.absolute eq '/' {
-                    self!_end_term( $clear-screen, $hide-cursor );
+                    self!_end_term();
                     return Empty;
                 }
                 $tmp_dir = $tmp_dir.dirname.IO;
@@ -137,12 +138,12 @@ method choose-dirs (
                 @chosen_dirs.pop;
                 next;
             }
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return Empty;
         }
         $default = $enchanted ?? @pre.end !! 0;
         if $choice eq $confirm {
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return @chosen_dirs;
         }
         elsif $choice eq $add-dir {
@@ -178,11 +179,11 @@ method choose-a-dir (
         Str        :$confirm      = $!confirm,
         Str        :$up           = $!up,
     ) { # --> IO::Path 
-    self!_init_term( $clear-screen, $mouse, $hide-cursor );
-    %!o = :$mouse, :$order, :$show-hidden, :$enchanted, :$justify, :$layout,
-          :$dir, :$info, :$prompt, :$name, :$back, :$confirm, :$up;
+    %!o = :$mouse, :$order, :$show-hidden, :$enchanted, :$justify, :$layout, :$hide-cursor,
+          :$dir, :$info, :$prompt, :$name, :$back, :$confirm, :$up, :$clear-screen;
+    self!_init_term();
     my $chosen = self!_choose_a_path( 0 );
-    self!_end_term( $clear-screen, $hide-cursor );
+    self!_end_term();
     return $chosen;
 }
 
@@ -207,11 +208,11 @@ method choose-a-file (
         Str        :$up           = $!up,
         Str        :$choose-file  = $!choose-file,
     ) { # --> IO::Path
-    self!_init_term( $clear-screen, $mouse, $hide-cursor );
-    %!o = :$mouse, :$order, :$show-hidden, :$enchanted, :$justify, :$layout, :$dir,
-          :$info, :$prompt, :$name, :$back, :$confirm, :$up, :$choose-file;
+    %!o = :$mouse, :$order, :$show-hidden, :$enchanted, :$justify, :$layout, :$dir, :$hide-cursor,
+          :$info, :$prompt, :$name, :$back, :$confirm, :$up, :$choose-file, :$clear-screen;
+    self!_init_term();
     my $chosen = self!_choose_a_path( 1 );
-    self!_end_term( $clear-screen, $hide-cursor );
+    self!_end_term();
     return $chosen;
 }
 
@@ -354,7 +355,8 @@ method choose-a-number ( Int $digits = 7,
         Str        :$back         = $!back,
         Str        :$confirm      = $!confirm,
     ) {
-    self!_init_term( $clear-screen, $mouse, $hide-cursor );
+    %!o = :$clear-screen, :$mouse, :$hide-cursor;
+    self!_init_term();
     my Str $sep = $thsd-sep;
     my Int $longest = $digits + ( $sep eq '' ?? 0 !! ( $digits - 1 ) div 3 );
     my Str $tab     = '  -  ';
@@ -407,12 +409,12 @@ method choose-a-number ( Int $digits = 7,
                 next NUMBER;
             }
             else {
-                self!_end_term( $clear-screen, $hide-cursor );
+                self!_end_term();
                 return;
             }
         }
         elsif $range eq $tmp_confirm {
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             if ! $result.defined {
                 return;
             }
@@ -479,7 +481,8 @@ method choose-a-subset ( @list,
         Str        :$confirm         = $!confirm,
 
     ) {
-    self!_init_term( $clear-screen, $mouse, $hide-cursor );
+    %!o = :$clear-screen, :$mouse, :$hide-cursor;
+    self!_init_term();
     my Str $tmp_prefix  = $prefix // ( $layout == 2 ?? '- ' !! '' );
     my Str $tmp_confirm = $confirm;
     my Str $tmp_back    = $back;
@@ -524,7 +527,7 @@ method choose-a-subset ( @list,
                 ( $new_val, $new_idx ) = @bu.pop;
                 next;
             }
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return;
         }
         @bu.push( [ [ |$new_val ], [ |$new_idx ] ] );
@@ -550,7 +553,7 @@ method choose-a-subset ( @list,
             if ! $new_idx.elems && $all-by-default {
                 $new_idx = [ 0 .. @list.end ];
             }
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return $index ?? $new_idx !! [ @list[|$new_idx] ];
         }
     }
@@ -570,7 +573,8 @@ method settings-menu ( @menu, %setup,
         Str        :$back         = $!back,
         Str        :$confirm      = $!confirm,
     ) {
-    self!_init_term( $clear-screen, $mouse, $hide-cursor );
+    %!o = :$clear-screen, :$mouse, :$hide-cursor;
+    self!_init_term();
     my Int $name_w = 0;
     my %new_setup;
     for @menu -> ( Str $key, Str $name, $ ) {
@@ -596,12 +600,12 @@ method settings-menu ( @menu, %setup,
             :prompt( @tmp.join: "\n" ), :1index, :2layout, :0justify, :undef( $back )
         );
         if ! $idx.defined {
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return False; ###
         }
         my $choice = $choices[$idx];
         if ! $choice.defined {
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return False; ###
         }
         elsif $choice eq $confirm {
@@ -611,13 +615,13 @@ method settings-menu ( @menu, %setup,
                 %setup{$key} = %new_setup{$key};
                 $change++;
             }
-            self!_end_term( $clear-screen, $hide-cursor );
+            self!_end_term();
             return $change.so; ###
         }
-        my Str $key = @menu[$idx-@pre][0];
-        my @values  = @menu[$idx-@pre][2];
+        my Str $key = @menu[$idx-@pre.elems][0];
+        my Int $last_idx_values = @menu[$idx-@pre.elems][2].end;
         %new_setup{$key}++;
-        %new_setup{$key} = 0 if %new_setup{$key} == @values.elems;
+        %new_setup{$key} = 0 if %new_setup{$key} > $last_idx_values;
     }
 }
 
@@ -728,7 +732,7 @@ Values: [0],1.
 
 =item1 prompt
 
-If set shows an additionally prompt line before the list of choices.
+If set, shows an additionally prompt line before the list of choices.
 
 =head2 choose-a-dir
 

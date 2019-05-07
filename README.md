@@ -62,7 +62,7 @@ Values: [0],1.
 
   * prompt
 
-If set shows an additionally prompt line before the list of choices.
+If set, shows an additionally prompt line before the list of choices.
 
 choose-a-dir
 ------------
