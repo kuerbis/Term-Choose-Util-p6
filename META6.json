@@ -4,7 +4,7 @@
   ],
   "build-depends" : [ ],
   "depends" : [
-    "Term::Choose:ver<1.5.1+>"
+    "Term::Choose:ver<1.5.3+>"
   ],
   "description" : "CLI related functions.",
   "license" : "Artistic-2.0",
@@ -22,5 +22,5 @@
   "test-depends" : [
     "Test"
   ],
-  "version" : "1.2.5"
+  "version" : "1.2.6"
 }

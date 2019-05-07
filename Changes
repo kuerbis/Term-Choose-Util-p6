@@ -1,6 +1,9 @@
 Revision history for Term::Choose::Util
 
 
+1.2.6   2019-05-07
+        - Term::Choose minimum version 1.5.3.
+
 1.2.5   2019-05-07
         - Bugfix values count in settings-menu.
         - Bufix options init_term.

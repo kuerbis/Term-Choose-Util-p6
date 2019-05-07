@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.2.5>;
+unit class Term::Choose::Util:ver<1.2.6>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
