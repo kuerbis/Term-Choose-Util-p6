@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.2.6>;
+unit class Term::Choose::Util:ver<1.2.7>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -54,7 +54,7 @@ method !_init_term {
         clear;
     }
     else {
-        clr-to-bot;
+        clr-lines-to-bot();
     }
 }
 
@@ -63,7 +63,9 @@ method !_end_term {
         restore-screen;
     }
     else {
-        clr-to-bot();
+        if ! $!loop {
+            clr-lines-to-bot(); # p5
+        }
     }
     if %!o<hide-cursor> && ! $!loop {
         show-cursor();
