@@ -30,11 +30,11 @@ Set the string for the `back` menu entry.
 
 Default: "<<".
 
-  * clear_screen
+  * clear-screen
 
 If set to `1`, the screen is cleared before printing the choices.
 
-If set to `2`, the "alternate screen" is used (control sequence `1049`).
+If set to `2`, the "alternate screen" is used.
 
 [0],1,2.
 
@@ -45,8 +45,6 @@ Set the string for the `confirm` menu entry.
 Default: "`OK`".
 
   * hide-cursor
-
-The control sequence `25` is used to hide the cursor.
 
 Values: 0,[1].
 

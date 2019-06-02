@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.2.7>;
+unit class Term::Choose::Util:ver<1.2.8>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -45,30 +45,30 @@ has Term::Choose $!tc;
 method !_init_term {
     $!tc = Term::Choose.new( :mouse( %!o<mouse> ), :1loop );
     if %!o<hide-cursor> {
-        hide-cursor();
+        print hide-cursor;
     }
     if %!o<clear-screen> == 2 {
-        save-screen;
+        print save-screen;
     }
     if %!o<clear-screen> {
-        clear;
+        print clear;
     }
     else {
-        clr-lines-to-bot();
+        print clr-lines-to-bot;
     }
 }
 
 method !_end_term {
     if %!o<clear-screen> == 2 {
-        restore-screen;
+        print restore-screen;
     }
     else {
         if ! $!loop {
-            clr-lines-to-bot(); # p5
+            print clr-lines-to-bot;
         }
     }
     if %!o<hide-cursor> && ! $!loop {
-        show-cursor();
+        print show-cursor;
     }
 }
 
@@ -702,11 +702,11 @@ Set the string for the C<back> menu entry.
 
 Default: "<<".
 
-=item1 clear_screen
+=item1 clear-screen
 
 If set to C<1>, the screen is cleared before printing the choices.
 
-If set to C<2>, the "alternate screen" is used (control sequence C<1049>).
+If set to C<2>, the "alternate screen" is used.
 
 [0],1,2.
 
@@ -717,8 +717,6 @@ Set the string for the C<confirm> menu entry.
 Default: "C<OK>".
 
 =item1 hide-cursor
-
-The control sequence C<25> is used to hide the cursor.
 
 Values: 0,[1].
 
