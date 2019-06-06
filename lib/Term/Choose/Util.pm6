@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.2.8>;
+unit class Term::Choose::Util:ver<1.2.9>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -43,7 +43,8 @@ has Term::Choose $!tc;
 
 
 method !_init_term {
-    $!tc = Term::Choose.new( :mouse( %!o<mouse> ), :1loop );
+    $!tc = Term::Choose.new( :mouse( %!o<mouse> ), :1loop, :clear-screen( %!o<clear-screen> ) );
+    # :1loop disables hide-cursor in Term::Choose
     if %!o<hide-cursor> {
         print hide-cursor;
     }
@@ -365,7 +366,7 @@ method choose-a-number ( Int $digits = 7,
     my Str @ranges;
     my $tmp_confirm;
     my $tmp_back;
-    if $longest * 2 + $tab.chars <= ( get-term-size )[0] {
+    if $longest * 2 + $tab.chars <= get-term-width() {
         @ranges = ( sprintf " %*s%s%*s", $longest, '0', $tab, $longest, '9' );
         for 1 .. $digits - 1 -> $zeros { #
             my Str $begin = insert-sep( '1' ~ '0' x $zeros, $sep );
@@ -393,7 +394,7 @@ method choose-a-number ( Int $digits = 7,
             @tmp.push: $info;
         }
         my $row = sprintf(  "{$name}%*s", $longest, $new_number );
-        if print-columns( $row ) > ( get-term-size )[0] {
+        if print-columns( $row ) > get-term-width() {
             $row = $new_number;
         }
         @tmp.push: $row;
@@ -580,50 +581,67 @@ method settings-menu ( @menu, %setup,
     my Int $name_w = 0;
     my %new_setup;
     for @menu -> ( Str $key, Str $name, $ ) {
-        my Int $len = print-columns( $name );
-        $name_w = $len if $len > $name_w;
+        $name_w max= print-columns( $name );
         %setup{$key} //= 0;
         %new_setup{$key} = %setup{$key};
     }
+    my @tmp;
+    @tmp.push: $info   if $info.chars;
+    @tmp.push: $prompt if $prompt.chars;
+    my $comb_prompt = @tmp.join: "\n";
+    my @pre = Any, $confirm;
+    my Str @print_keys;
+    for @menu -> ( Str $key, Str $name, @values ) {
+        @print_keys.push: sprintf "%-*s [%s]", $name_w, $name, @values[%new_setup{$key}];
+    }
+    %*ENV<TC_RESET_AUTO_UP> = 0;
+    my Int $default = 0;
+    my Int $count = 0;
 
     loop {
-        my @tmp;
-        @tmp.push: $info   if $info.chars;
-        @tmp.push: $prompt if $prompt.chars;
-        my Str @print_keys;
-        for @menu -> ( Str $key, Str $name, @values ) {
-            @print_keys.push: sprintf "%-*s [%s]", $name_w, $name, @values[%new_setup{$key}];
-        }
-        my @pre = ( Any, $confirm );
-        my $choices = [ |@pre, |@print_keys ];
         # Choose
         my Int $idx = $!tc.choose(
-            $choices,
-            :prompt( @tmp.join: "\n" ), :1index, :2layout, :0justify, :undef( $back )
+            [ |@pre, |@print_keys ],
+            :prompt( $comb_prompt ), :1index, :$default, :2layout, :0justify, :undef( $back )
         );
-        if ! $idx.defined {
+        if ! $idx {
             self!_end_term();
             return False; ###
         }
-        my $choice = $choices[$idx];
-        if ! $choice.defined {
-            self!_end_term();
-            return False; ###
-        }
-        elsif $choice eq $confirm {
+        elsif $idx == @pre.end {
             my Int $change = 0;
             for @menu -> ( Str $key, $, $ ) {
-                next if %setup{$key} == %new_setup{$key};
+                if %setup{$key} == %new_setup{$key} {
+                    next;
+                }
                 %setup{$key} = %new_setup{$key};
                 $change++;
             }
             self!_end_term();
             return $change.so; ###
         }
-        my Str $key = @menu[$idx-@pre.elems][0];
-        my Int $last_idx_values = @menu[$idx-@pre.elems][2].end;
-        %new_setup{$key}++;
-        %new_setup{$key} = 0 if %new_setup{$key} > $last_idx_values;
+        my \i = $idx-@pre.elems;
+        if $default == $idx {
+            if %*ENV<TC_RESET_AUTO_UP> {
+                $count = 0;
+            }
+            elsif $count == @menu[i][2].elems * 3  {
+                $default = 0;
+                $count = 0;
+                next;
+            }
+        }
+        else {
+            $count = 0;
+            $default = $idx;
+        }
+        ++$count;
+        my \key = @menu[i][0];
+        ++%new_setup{key};
+        if %new_setup{key} > @menu[i][2].end {
+            %new_setup{key} = 0;
+        }
+        @print_keys[i] ~~ s/ '[' .+ ']' $ /[@menu[i][2][%new_setup{key}]]/;
     }
 }
 

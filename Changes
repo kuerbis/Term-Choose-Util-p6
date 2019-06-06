@@ -1,6 +1,10 @@
 Revision history for Term::Choose::Util
 
 
+1.2.9   2019-06-06
+        - Update settings-menu behavior.
+        - Pass clear-screen to Term::Choose
+
 1.2.8   2019-06-02
         - Escape sequence subroutines without print.
         - Perl6 minimum version 6.d.
