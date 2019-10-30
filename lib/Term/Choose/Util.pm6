@@ -409,7 +409,7 @@ method choose-a-number ( Int $digits = 7,
     self!_init_term();
     my Int $sep_w;
     if $color {
-        my $tmp_sep = $thousands-separator.subst( / \e \[ [ \d \; ]* m /, '', :g );
+        my $tmp_sep = $thousands-separator.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
         $sep_w = print-columns( $tmp_sep );
     }
     else {
@@ -421,8 +421,8 @@ method choose-a-number ( Int $digits = 7,
     my Str @ranges;
     my ( $back_w, $confirm_w );
     if $color {
-        my $tmp_back    =    $back.subst( / \e \[ [ \d \; ]* m /, '', :g );
-        my $tmp_confirm = $confirm.subst( / \e \[ [ \d \; ]* m /, '', :g );
+        my $tmp_back    =    $back.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
+        my $tmp_confirm = $confirm.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
         $back_w    = print-columns( $tmp_back    );
         $confirm_w = print-columns( $tmp_confirm );
     }
@@ -542,7 +542,7 @@ method choose-a-subset ( @list,
         Int_0_to_2 :$alignment                   = $!alignment,
         Int_0_to_2 :$layout                      = 2,
         List       :$mark                        = $!mark,
-        Str        :$prefix                      = $!prefix,
+        Str        :$prefix                      = $!prefix // '',
         Str        :$info                        = $!info,
         Str        :$prompt                      = 'Choose:',
         Str        :$current-selection-label     = $!current-selection-label // '', #/
@@ -557,16 +557,9 @@ method choose-a-subset ( @list,
     %!o = :$clear-screen, :$mouse, :$hide-cursor;
     self!_old_names_warnings( %rest );                              # old names warnings ###
     self!_init_term();
-    my Str $tmp_prefix  = $prefix // ( $layout == 2 ?? '- ' !! '' );
-    my Str $tmp_confirm = $confirm;
-    my Str $tmp_back    = $back;
-    if $layout == 2 && $tmp_prefix.chars {
-        $tmp_confirm = ( ' ' x $tmp_prefix.chars ) ~ $tmp_confirm;
-        $tmp_back    = ( ' ' x $tmp_prefix.chars ) ~ $tmp_back;
-    }
     my List $new_idx = [];
     my List $new_val = [ @list ];
-    my @pre = ( Any, $tmp_confirm );
+    my @pre = ( Any, $confirm );
     my List $initially_marked = [ |$mark.map: { $_ + @pre.elems } ];
     my @bu;
 
@@ -585,17 +578,17 @@ method choose-a-subset ( @list,
         elsif $all-by-default {
             $sofar ~= $current-selection-begin ~ '*' ~ $current-selection-end;
         }
-        if $sofar.defined {  # test ### 
+        if $sofar.defined {
             @tmp.push: $sofar;
         }
         if $prompt.chars {
             @tmp.push: $prompt;
         }
-        my $choices = [ |@pre, |$new_val.map: { $tmp_prefix ~ $_.gist } ];
+        my $choices = [ |@pre, |$new_val.map: { $prefix ~ $_.gist } ];
         # Choose
         my Int @idx = $!tc.choose-multi(
             $choices,
-            :prompt( @tmp.join: "\n" ), :meta-items( |^@pre ), :undef( $tmp_back ), :lf( 0, $current-selection-label.chars ),
+            :prompt( @tmp.join: "\n" ), :meta-items( |^@pre ), :undef( $back ), :lf( 0, ( $current-selection-label // '' ).chars ), # /
             :$alignment, :1index, :$layout, :$order, :mark( $initially_marked ), :2include-highlighted, :$color
         );
         if $initially_marked.defined {
@@ -611,7 +604,7 @@ method choose-a-subset ( @list,
         }
         @bu.push( [ [ |$new_val ], [ |$new_idx ] ] );
         my $ok;
-        if @idx[0] == @pre.first( $tmp_confirm, :k ) {
+        if @idx[0] == @pre.first( $confirm, :k ) {
             $ok = True;
             @idx.shift;
         }
@@ -663,7 +656,7 @@ method settings-menu ( @menu, %setup,
     my %new_setup;
     for @menu -> ( Str $key, Str $name, $ ) {
         if $color {
-            my $tmp_name = $name.subst( / \e \[ [ \d \; ]* m /, '', :g );
+            my $tmp_name = $name.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
             %name_w{$key} = print-columns( $tmp_name );
         }
         else {
@@ -748,9 +741,9 @@ sub insert-sep ( $num, $thousands-separator = ' ' ) is export( :insert-sep ) {
     if $num !~~ / ^ <sign>? <int> <rest>? $ / {
         return $num;
     }
-    #while $num.=subst( / ^ ( -? \d+ ) ( \d\d\d ) /, "$0$thousands-separator$1" ) {};
     my $new = $<sign> // '';
-    $new   ~= $<int>.flip.comb( / . ** 1..3 / ).join( $thousands-separator ).flip;
+    $new   ~= $<int>.flip.comb( / . ** 1..3 / ).join( "\x[feff]\x[feff]" ).flip;
+    $new.=subst( /"\x[feff]\x[feff]"/, $thousands-separator, :g ); # to preserve ansi color escapes
     $new   ~= $<rest> // '';
     return $new;
 }
