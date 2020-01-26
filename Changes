@@ -1,11 +1,18 @@
 Revision history for Term::Choose::Util
 
 
+1.3.1   2020-01-26
+        - choose-a-file: new option 'filter'.
+        - Rewritten 'choose_directories'.
+        - Bugfix color-output in 'choose-a-number'.
+        - Set the option 'color' to 2 to enable colors also for the current selected item.
+
+
 1.3.0   2019-10-30
-        - Renamed functions: 'choose_a_dir' to 'choose_a_directory', 'choose_dirs' to 'choose_directories'.
+        - Renamed functions: 'choose-a-dir' to 'choose-a-directory', 'choose-dirs' to 'choose-directories'.
         - New option 'color';
         - Renamed some options.
-        - 'settings_menu': looping through values only once.
+        - 'settings-menu': looping through values only once.
         - Update menus.
         - Update documentation.
 

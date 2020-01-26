@@ -17,38 +17,6 @@ The constructor method `new` can be called with optional named arguments:
 
         my $new = Term::Choose::Util.new( :mouse(1), ... )
 
-DEPRECATIONS
-------------
-
-The use of `choose-dirs` is deprecated - use `choose-directories` instead.
-
-The use of `choose-a-dir` is deprecated - use `choose-a-directory` instead.
-
-The deprecated routine names will be removed.
-
-RENAMED OPTIONS
----------------
-
-    <Old names>:        <New names>:
-
-    justify             alignment
-
-    dir                 init-dir
-
-    up                  parent-dir
-
-    name                current-selection-label
-
-    sofar-begin         current-selection-begin
-
-    sofar-separator     current-selection-separator
-
-    sofar-end           current-selection-end
-
-    thsd-sep            thousands-separator
-
-Only the new option names work.
-
 ROUTINES
 ========
 
@@ -66,7 +34,9 @@ Values: [0],1.
 
 Enables the support for color and text formatting escape sequences.
 
-Values: [0],1.
+Setting color to 1 enables the support for color and text formatting escape sequences except for the current selected element. If set to 2, also for the current selected element the color support is enabled (inverted colors).
+
+Values: [0],1,2.
 
   * hide-cursor
 
@@ -86,13 +56,13 @@ Enable the mouse mode. An item can be chosen with the left mouse key, the right 
 
 Values: [0],1.
 
-  * current-selection-label
+  * cs-label
 
-The value of *current-selection-label* is a string which is placed in front of the "chosen so far" info output.
+The value of *cs-label* is a string which is placed in front of the "chosen so far" info output.
 
-With `settings-menu` the "chosen so far" info output is only shown if *current-selection-label* is defined.
+With `settings-menu` the "chosen so far" info output is only shown if *cs-label* is defined.
 
-Defaults: `choose-directories`: 'Dirs: ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: ', `choose-a-number`: ' >', `choose-a-subset`: '', `settings-menu`: undef
+Defaults: `choose-directories`: '> ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: ', `choose-a-number`: '> ', `choose-a-subset`: '', `settings-menu`: undef
 
 The "chosen so far" info output is placed between the *info* string and the *prompt* string.
 
@@ -188,6 +158,14 @@ Browse the directory tree the same way as described for `choose-a-directory`. Se
 
 Options as in [choose-a-directory](#choose-a-directory) plus
 
+  * filter
+
+If set, the value of this option is treated as a regex pattern.
+
+Only files matching this pattern will be displayed.
+
+The regex pattern is used as the value of `dir`s `:test` parameter.
+
   * show-files
 
 Customize the string of the menu entry "show-files".
@@ -201,7 +179,7 @@ choose-directories
 
 `choose-directories` is similar to `choose-a-directory` but it is possible to return multiple directories.
 
-Use the "add-dir" menu entry to add the current directory to the list of chosen directories.
+Use the "add-dirs" menu entry to add the current directory to the list of chosen directories.
 
 To return the list of chosen directories select the "confirm" menu entry.
 
@@ -209,16 +187,16 @@ The "back" menu entry removes the last added directory. If the list of chosen di
 
 Options as in [choose-a-directory](#choose-a-directory) plus
 
-  * add-dir
+  * add-dirs
 
-Customize the string of the menu entry "add-dir".
+Customize the string of the menu entry "add-dirs".
 
 Default: `ADD-DIR`
 
 choose-a-number
 ---------------
 
-        my $number = choose-a-number( 5, :name<Testnumber>, ... );
+        my $number = choose-a-number( 5, :cs-label<Testnumber>, ... );
 
 This function lets you choose/compose a number (unsigned integer) which is then returned.
 
@@ -250,6 +228,10 @@ The subset is returned as an array.
 The first argument is the list of choices.
 
 Options:
+
+  * all-by-default
+
+If enabled, all elements are selected if `CONFIRM` is chosen without any selected elements.
 
   * alignment
 
@@ -293,21 +275,21 @@ Values: 0,[1].
 
 Default: empty string.
 
-  * current-selection-begin
+  * cs-begin
 
-Info output: the *current-selection-begin* string is placed between the *current-selection-label* string and the chosen elements as soon as an element has been chosen.
+Info output: the *cs-begin* string is placed between the *cs-label* string and the chosen elements as soon as an element has been chosen.
 
 Default: empty string
 
-  * current-selection-separator
+  * cs-separator
 
-Info output: *current-selection-separator* is placed between the chosen list elements.
+Info output: *cs-separator* is placed between the chosen list elements.
 
 Default: `,`
 
-  * current-selection-end
+  * cs-end
 
-Info output: as soon as elements have been chosen the *current-selection-end* string is placed at the end of the chosen elements.
+Info output: as soon as elements have been chosen the *cs-end* string is placed at the end of the chosen elements.
 
 Default: empty string
 
@@ -358,7 +340,49 @@ It is possible to scroll through the rows. If a row is selected, the set and dis
 
 If the "back" menu entry is chosen, `settings-menu` does not apply the made changes and returns nothing. If the "confirm" menu entry is chosen, `settings-menu` applies the made changes in place to the passed configuration hash (second argument) and returns the number of made changes.
 
-Setting the option *current-selection-label* to a defined value adds an info output line.
+Setting the option *cs-label* to a defined value adds an info output line.
+
+DEPRECATIONS
+------------
+
+The use of `choose-dirs` is deprecated - use `choose-directories` instead.
+
+The use of `choose-a-dir` is deprecated - use `choose-a-directory` instead.
+
+The deprecated routine names will be removed.
+
+RENAMED OPTIONS
+---------------
+
+    <Old names>:                <New names>:
+
+    justify                     alignment
+
+    dir                         init-dir
+
+    up                          parent-dir
+
+    name                        cs-label
+
+    current-selection-label     cs-label
+
+    sofar-begin                 cs-begin
+
+    current-selection-begin     cs-begin
+
+    sofar-separator             cs-separator
+
+    current-selection-separator cs-separator
+
+    sofar-end                   cs-end
+
+    current-selection-end       cs-end
+
+    thsd-sep                    thousands-separator
+
+    add-dir                     add-dirs
+
+Only the new option names work.
 
 AUTHOR
 ======
@@ -373,7 +397,7 @@ Thanks to the people from [Perl-Community.de](http://www.perl-community.de), fro
 LICENSE AND COPYRIGHT
 =====================
 
-Copyright 2016-2019 Matthäus Kiem.
+Copyright 2016-2020 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

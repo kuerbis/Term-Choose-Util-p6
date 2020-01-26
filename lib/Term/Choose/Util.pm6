@@ -1,16 +1,13 @@
 use v6;
-unit class Term::Choose::Util:ver<1.3.0>;
+unit class Term::Choose::Util:ver<1.3.1>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
 use Term::Choose::Screen;
 
-has %!o;
-
 subset Int_0_to_2 of Int where * == 0|1|2;
 subset Int_0_or_1 of Int where * == 0|1;
 
-has Int_0_or_1 $.color           = 0;
 has Int_0_or_1 $.hide-cursor     = 1;
 has Int_0_or_1 $.index           = 0;
 has Int_0_or_1 $.loop            = 0;
@@ -19,36 +16,44 @@ has Int_0_or_1 $.order           = 1;
 has Int_0_or_1 $.show-hidden     = 1;
 has Int_0_or_1 $.small-first     = 0;
 has Int_0_or_1 $.keep-chosen     = 0;
-has Int_0_or_1 $.all-by-default  = 0;   # documentation
+has Int_0_or_1 $.all-by-default  = 0;
 has Int_0_to_2 $.alignment       = 0;
 has Int_0_to_2 $.clear-screen    = 0;
+has Int_0_to_2 $.color           = 0;
 has Int_0_to_2 $.enchanted       = 1;
 has Int_0_to_2 $.layout          = 1;
 has List       $.mark            = [];
-has Str $.add-dir                     = 'ADD-DIR';
-has Str $.back                        = 'BACK';
-has Str $.choose-file                 = 'SHOW-FILES';
-has Str $.confirm                     = 'CONFIRM';
-has Str $.current-selection-begin     = '';
-has Str $.current-selection-label;
-has Str $.current-selection-end       = '';
-has Str $.current-selection-separator = ', ';
-has Str $.info                        = '';
-has Str $.init-dir                    = $*HOME.Str;
-has Str $.parent-dir                  = 'PARENT-DIR';
+has List       $.tabs-info       = [];  # no doc
+has List       $.tabs-prompt     = [];  # no doc
+has Str $.add-dirs               = 'Add-DIRS';
+has Str $.back                   = 'BACK';
+has Str $.show-files             = 'Show-FILES';
+has Str $.confirm                = 'CONFIRM';
+has Str $.cs-begin               = '';
+has Str $.cs-label;
+has Str $.cs-end                 = '';
+has Str $.cs-separator           = ', ';
+has Str $.filter;
+has Str $.info                   = '';
+has Str $.init-dir               = $*HOME.Str;
+has Str $.parent-dir             = 'Parent-DIR';
 has Str $.prefix;
-has Str $.prompt                      = '';
-has Str $.thousands-separator         = ',';
+has Str $.prompt                 = '';
+has Str $.thousands-separator    = ',';
+has Str $.reset                  = 'reset'; # no doc
+
 
 #### old names warnings ###
 method !_old_names_warnings ( %opt ) {
-    my %map_old_to_new = :up( 'parent-dir' ), :justify( 'alignment' ), :dir( 'init-dir' ), :sofar-begin( 'current-selection-begin' ),
-                         :sofar-end( 'current-selection-end' ), :sofar-separator( 'current-selection-separator' ),
-                         :name( 'current-selection-label' ), :thsd-sep( 'thousands-separator' );
+    my %map_old_to_new = :up( 'parent-dir' ), :justify( 'alignment' ), :dir( 'init-dir' ), :sofar-begin( 'cs-begin' ),
+                         :sofar-end( 'cs-end' ), :sofar-separator( 'cs-separator' ), :name( 'cs-label' ),
+                         :thsd-sep( 'thousands-separator' ), :current-selection-begin( 'cs-begin' ),
+                         :current-selection-end( 'cs-end' ), :current-selection-separator( 'cs-separator' ),
+                         :current-selection-label( 'cs-label' ), :add-dir( 'add-dirs' ), :choose-file( 'show-files' );
     my @lines;
     for %opt.keys -> $key {
-        if $key eq <justify dir up sofar-begin sofar-end sofar-separator name thsd-sep>.any {
-            @lines.push: sprintf "\"%s\"  is now called  \"%s\"", $key, %map_old_to_new{$key};
+        if $key eq %map_old_to_new.keys.any {
+            @lines.push: sprintf "\"%s\" is now called \"%s\"", $key, %map_old_to_new{$key};
         }
     }
     if ( @lines ) {
@@ -61,16 +66,16 @@ method !_old_names_warnings ( %opt ) {
 has Term::Choose $!tc;
 
 
-method !_init_term {
+method !_init_term ( %opt ) {
     # :1loop disables hide-cursor in Term::Choose
-    $!tc = Term::Choose.new( :mouse( %!o<mouse> ), :1loop, :clear-screen( %!o<clear-screen> ) ); 
-    if %!o<hide-cursor> {
+    $!tc = Term::Choose.new( :mouse( %opt<mouse> ), :1loop, :clear-screen( %opt<clear-screen> ), :color( %opt<color> ) );
+    if %opt<hide-cursor> {
         print hide-cursor;
     }
-    if %!o<clear-screen> == 2 {
+    if %opt<clear-screen> == 2 {
         print save-screen;
     }
-    if %!o<clear-screen> {
+    if %opt<clear-screen> {
         print clear;
     }
     else {
@@ -78,8 +83,8 @@ method !_init_term {
     }
 }
 
-method !_end_term {
-    if %!o<clear-screen> == 2 {
+method !_end_term ( %opt ) {
+    if %opt<clear-screen> == 2 {
         print restore-screen;
     }
     else {
@@ -87,13 +92,10 @@ method !_end_term {
             print clr-lines-to-bot;
         }
     }
-    if %!o<hide-cursor> && ! $!loop {
+    if %opt<hide-cursor> && ! $!loop {
         print show-cursor;
     }
 }
-
-
-sub _string_gist ( $_ ) { S:g/' '/\ / } # ?
 
 
 sub choose-dirs ( *%opt ) is export( :DEFAULT, :choose-dirs ) { Term::Choose::Util.new().choose-directories( |%opt ) }  # DEPRECATED    1.3.0
@@ -102,94 +104,97 @@ method choose-dirs ( *%opt ) { Term::Choose::Util.new().choose-directories( |%op
 sub choose-directories ( *%opt ) is export( :DEFAULT, :choose-directories ) { Term::Choose::Util.new().choose-directories( |%opt ) }
 
 method choose-directories (
-        Int_0_or_1 :$color                   = $!color,
-        Int_0_or_1 :$mouse                   = $!mouse,
-        Int_0_or_1 :$order                   = $!order,
-        Int_0_or_1 :$hide-cursor             = $!hide-cursor,
-        Int_0_or_1 :$show-hidden             = $!show-hidden,
-        Int_0_or_1 :$enchanted               = $!enchanted,
-        Int_0_to_2 :$clear-screen            = $!clear-screen,
-        Int_0_to_2 :$alignment               = $!alignment,
-        Int_0_to_2 :$layout                  = $!layout,
-        Str        :$init-dir                = $!init-dir,
-        Str        :$info                    = $!info,
-        Str        :$current-selection-label = $!current-selection-label // 'Dirs: ', #/
-        Str        :$prompt                  = $!prompt,
-        Str        :$back                    = $!back,
-        Str        :$confirm                 = $!confirm,
-        Str        :$add-dir                 = $!add-dir,
-        Str        :$parent-dir              = $!parent-dir,
-        *%rest                                                      # old names warnings ###
+        Int_0_or_1 :$mouse        = $!mouse,
+        Int_0_or_1 :$order        = $!order,
+        Int_0_or_1 :$hide-cursor  = $!hide-cursor,
+        Int_0_or_1 :$show-hidden  = $!show-hidden,
+        Int_0_or_1 :$enchanted    = $!enchanted,
+        Int_0_to_2 :$clear-screen = $!clear-screen,
+        Int_0_to_2 :$color        = $!color,
+        Int_0_to_2 :$alignment    = $!alignment,
+        Int_0_to_2 :$layout       = $!layout,
+        Str        :$init-dir     = $!init-dir,
+        Str        :$info         = $!info,
+        Str        :$cs-label     = $!cs-label // '> ', #/
+        Str        :$prompt       = $!prompt,
+        Str        :$back         = $!back,
+        Str        :$confirm      = $!confirm,
+        Str        :$add-dirs     = $!add-dirs,
+        Str        :$parent-dir   = $!parent-dir,
+        List       :$tabs-info    = $!tabs-info,
+        List       :$tabs-prompt  = $!tabs-prompt,
+        *%rest # old names warnings ###
     ) {
-    %!o = :$clear-screen, :$mouse, :$hide-cursor;
-    self!_old_names_warnings( %rest );                              # old names warnings ###
-    self!_init_term();
-    my @chosen_dirs;
-    my IO::Path $tmp_dir = $init-dir.IO;
-    my IO::Path $previous = $tmp_dir;
-    my @pre = ( Any, $confirm, $add-dir, $parent-dir );
-    my Int $default = $enchanted ?? @pre.end !! 0;
+    self!_old_names_warnings( %rest ); # old names warnings ###
+    my %opt_term = :$clear-screen, :$mouse, :$hide-cursor, :$color;
+    self!_init_term( %opt_term );
+    my @chosen_dirs; #
+    my IO::Path $current_dir = $init-dir.IO;
+    my IO::Path $previous = $current_dir;
+    my Str ( $browse, $add_dirs ) = ( 'Browse', 'Add_Dirs' );
+    my Str $mode = $browse;
+    my @bu;
 
     loop {
-        my IO::Path @dirs;
-        try {
-            if $show-hidden {
-                @dirs = $tmp_dir.dir.grep({ .d }).sort;
+        my Int $term_w = get-term-width();
+        my Int $cs_label_w = print-columns-ext( $cs-label, $color );
+        my Str $tmp_info = line-fold(
+            $cs-label ~ @chosen_dirs.join( ', ' ),
+            $term_w,
+            :subseq-tab( ' ' x $cs_label_w ), :$color
+        ).join: "\n";
+        my $prompt = $tmp_info ~ "\n" ~ ' ' ~ "\n" ~ 'Browse:';
+        if $mode eq $browse {
+            my %opt_path = :cs-label( 'cwd: ' ), :cs-begin( '' ), :cs-end( '' ), :$prompt, :info( '' ),
+                           :$order, :$show-hidden, :$enchanted, :$alignment, :$layout, :$tabs-info, :$tabs-prompt,
+                           :$init-dir, :$back, :$confirm, :$add-dirs, :$parent-dir;
+            ( $current_dir, my Int $to_add_dirs ) = self!_choose_a_path( 'choose-directories', $current_dir, %opt_path );
+            if ! $current_dir.defined {
+                if @bu.elems {
+                    ( $current_dir, @chosen_dirs ) = @bu.pop;
+                    next;
+                }
+                self!_end_term( %opt_term );
+                return;
+            }
+            if $to_add_dirs {
+                $mode = $add_dirs;
+                next;
             }
             else {
-                @dirs = $tmp_dir.dir.grep({ .d && .basename !~~ / ^ \. / }).sort;
+                self!_end_term( %opt_term );
+                return @chosen_dirs;
             }
-            CATCH { #
-                my $prompt = $tmp_dir.gist ~ ":\n" ~ $_;
-                $!tc.pause( [ 'Press ENTER to continue.' ], :$prompt );
-                if $tmp_dir.absolute eq '/' {
-                    self!_end_term();
-                    return Empty;
+        }
+        elsif $mode eq $add_dirs {
+            my IO::Path @avail_dirs;
+            try {
+                if $show-hidden {
+                    @avail_dirs = $current_dir.dir.grep({ .d }).sort;
                 }
-                $tmp_dir = $tmp_dir.dirname.IO;
-                next;
+                else {
+                    @avail_dirs = $current_dir.dir.grep({ .d && .basename !~~ / ^ \. / }).sort;
+                }
+                CATCH {
+                    my $p = $current_dir ~ ":\n" ~ $_;
+                    $!tc.pause( [ 'Press ENTER to continue.' ], :$p );
+                    $mode = $browse;
+                    next;
+                }
             }
-        }
-        my @tmp;
-        @tmp.push: $info if $info.chars;
-        @tmp.push: $current-selection-label ~ @chosen_dirs.map({ _string_gist( $_ ) }).join( ', ' ) ~ "    <<-add-dir-[ $previous ]";
-        @tmp.push: $prompt if $prompt.chars;
-        my $current_selection = @tmp.join: "\n";
-        my @choices = |@pre, |@dirs.map({ .basename });
-        # Choose
-        my $idx = $!tc.choose(
-            @choices,
-            :prompt( $current_selection ), :$default, :undef( $back ), :$alignment, :$layout, :$order, :1index,
-            :lf( 0, $current-selection-label.chars ), :$color
-        );
-        if ! $idx[0] {
-            if @chosen_dirs.elems {
-                @chosen_dirs.pop;
-                next;
+            my $idxs = self.choose-a-subset(
+                @avail_dirs.map({ .basename }).sort,
+                :back( '<<' ), :confirm( 'OK' ), :prompt( 'Choose:' ), :cs-begin( '+ ' ), :cs-label( '' ),
+                :info( 'cwd: ' ~ $current_dir ~ '' ~ "\n" ~ $tmp_info ),
+                :1index, :0layout, :0hide-cursor
+            );
+            if $idxs.defined && $idxs.elems {
+                @bu.push: [ $current_dir, [ |@chosen_dirs ] ];
+                @chosen_dirs.push: |@avail_dirs[|$idxs];
             }
-            self!_end_term();
-            return Empty;
-        }
-        $default = $enchanted ?? @pre.end !! 0;
-        if @choices[$idx] eq $confirm {
-            self!_end_term();
-            return @chosen_dirs;
-        }
-        elsif @choices[$idx] eq $add-dir {
-            @chosen_dirs.push: $previous;
-            $tmp_dir = $tmp_dir.dirname.IO;
-            $default = 0 if $previous eq $tmp_dir;
-            $previous = $tmp_dir;
+            $mode = $browse;
             next;
         }
-        elsif @choices[$idx] eq $parent-dir {
-            $tmp_dir = $tmp_dir.dirname.IO;
-        }
-        else {
-            $tmp_dir = @dirs[$idx-@pre];
-        }
-        $default = 0 if $previous eq $tmp_dir;
-        $previous = $tmp_dir;
     }
 }
 
@@ -200,184 +205,212 @@ method choose-a-dir ( *%opt ) { Term::Choose::Util.new().choose-a-directory( |%o
 sub choose-a-directory ( *%opt ) is export( :DEFAULT, :choose-a-directory ) { Term::Choose::Util.new().choose-a-directory( |%opt ) } #  --> IO::Path
 
 method choose-a-directory (
-        Int_0_or_1 :$color                   = $!color,
-        Int_0_or_1 :$mouse                   = $!mouse,
-        Int_0_or_1 :$order                   = $!order,
-        Int_0_or_1 :$hide-cursor             = $!hide-cursor,
-        Int_0_or_1 :$show-hidden             = $!show-hidden,
-        Int_0_or_1 :$enchanted               = $!enchanted,
-        Int_0_to_2 :$clear-screen            = $!clear-screen,
-        Int_0_to_2 :$alignment               = $!alignment,
-        Int_0_to_2 :$layout                  = $!layout,
-        Str        :$init-dir                = $!init-dir,
-        Str        :$info                    = $!info,
-        Str        :$prompt                  = $!prompt,
-        Str        :$current-selection-label = $!current-selection-label // 'Dir: ', #/
-        Str        :$back                    = $!back,
-        Str        :$confirm                 = $!confirm,
-        Str        :$parent-dir              = $!parent-dir,
-        *%rest                                                      # old names warnings ###
-    ) { # --> IO::Path 
-    %!o = :$mouse, :$order, :$show-hidden, :$enchanted, :$alignment, :$layout, :$hide-cursor,
-          :$init-dir, :$info, :$prompt, :$current-selection-label, :$back, :$confirm, :$parent-dir, :$clear-screen, :$color;
-    self!_old_names_warnings( %rest );                              # old names warnings ###
-    self!_init_term();
-    my $chosen = self!_choose_a_path( 0 );
-    self!_end_term();
-    return $chosen;
+        Int_0_or_1 :$mouse        = $!mouse,
+        Int_0_or_1 :$order        = $!order,
+        Int_0_or_1 :$hide-cursor  = $!hide-cursor,
+        Int_0_or_1 :$show-hidden  = $!show-hidden,
+        Int_0_or_1 :$enchanted    = $!enchanted,
+        Int_0_to_2 :$clear-screen = $!clear-screen,
+        Int_0_to_2 :$color        = $!color,
+        Int_0_to_2 :$alignment    = $!alignment,
+        Int_0_to_2 :$layout       = $!layout,
+        Str        :$init-dir     = $!init-dir,
+        Str        :$info         = $!info,
+        Str        :$prompt       = $!prompt,
+        Str        :$cs-label     = $!cs-label // 'Dir: ', #/
+        Str        :$back         = $!back,
+        Str        :$confirm      = $!confirm,
+        Str        :$parent-dir   = $!parent-dir,
+        List       :$tabs-info    = $!tabs-info,
+        List       :$tabs-prompt  = $!tabs-prompt,
+        *%rest # old names warnings ###
+    ) { # --> IO::Path
+    self!_old_names_warnings( %rest ); # old names warnings ###
+    my %opt_term = :$clear-screen, :$mouse, :$hide-cursor, :$color;
+    self!_init_term( %opt_term );
+    my IO::Path $current_dir = $init-dir.IO;
+    my %opt_path = :$order, :$show-hidden, :$enchanted, :$alignment, :$layout, :$tabs-info, :$tabs-prompt,
+                   :$info, :$prompt, :$cs-label, :$back, :$confirm, :$parent-dir;
+    my IO::Path $chosen_path = self!_choose_a_path( 'choose-a-directory', $current_dir, %opt_path );
+    self!_end_term( %opt_term );
+    return $chosen_path;
 }
 
 
 sub choose-a-file    ( *%opt ) is export( :DEFAULT, :choose-a-file ) { Term::Choose::Util.new().choose-a-file( |%opt ) } #  --> IO::Path
 
 method choose-a-file (
-        Int_0_or_1 :$color                   = $!color,
-        Int_0_or_1 :$mouse                   = $!mouse,
-        Int_0_or_1 :$order                   = $!order,
-        Int_0_or_1 :$hide-cursor             = $!hide-cursor,
-        Int_0_or_1 :$show-hidden             = $!show-hidden,
-        Int_0_or_1 :$enchanted               = $!enchanted,
-        Int_0_to_2 :$clear-screen            = $!clear-screen,
-        Int_0_to_2 :$alignment               = $!alignment,
-        Int_0_to_2 :$layout                  = $!layout,
-        Str        :$init-dir                = $!init-dir,
-        Str        :$info                    = $!info,
-        Str        :$prompt                  = $!prompt,
-        Str        :$current-selection-label = $!current-selection-label // 'File: ',  #/  # New file
-        Str        :$back                    = $!back,
-        Str        :$confirm                 = $!confirm,
-        Str        :$parent-dir              = $!parent-dir,
-        Str        :$choose-file             = $!choose-file,
-        *%rest                                                      # old names warnings ###
+        Int_0_or_1 :$mouse        = $!mouse,
+        Int_0_or_1 :$order        = $!order,
+        Int_0_or_1 :$hide-cursor  = $!hide-cursor,
+        Int_0_or_1 :$show-hidden  = $!show-hidden,
+        Int_0_or_1 :$enchanted    = $!enchanted,
+        Int_0_to_2 :$clear-screen = $!clear-screen,
+        Int_0_to_2 :$color        = $!color,
+        Int_0_to_2 :$alignment    = $!alignment,
+        Int_0_to_2 :$layout       = $!layout,
+        Str        :$filter       = $!filter,
+        Str        :$init-dir     = $!init-dir,
+        Str        :$info         = $!info,
+        Str        :$prompt       = $!prompt,
+        Str        :$cs-label     = $!cs-label // 'File: ',  #/
+        Str        :$back         = $!back,
+        Str        :$confirm      = $!confirm,
+        Str        :$parent-dir   = $!parent-dir,
+        Str        :$show-files   = $!show-files,
+        List       :$tabs-info    = $!tabs-info,
+        List       :$tabs-prompt  = $!tabs-prompt,
+        *%rest # old names warnings ###
     ) { # --> IO::Path
-    %!o = :$mouse, :$order, :$show-hidden, :$enchanted, :$alignment, :$layout, :$init-dir, :$hide-cursor,
-          :$info, :$prompt, :$current-selection-label, :$back, :$confirm, :$parent-dir, :$choose-file, :$clear-screen, :$color;
-    self!_old_names_warnings( %rest );                              # old names warnings ###
-    self!_init_term();
-    my $chosen = self!_choose_a_path( 1 );
-    self!_end_term();
-    return $chosen;
+    self!_old_names_warnings( %rest ); # old names warnings ###
+    my %opt_term = :$clear-screen, :$mouse, :$hide-cursor, :$color;
+    self!_init_term( %opt_term );
+    my IO::Path $current_dir = $init-dir.IO;
+    my %opt_path = :$order, :$show-hidden, :$enchanted, :$alignment, :$layout, :$filter, :$info, :$prompt,
+                   :$cs-label, :$back, :$confirm, :$parent-dir, :$show-files, :$tabs-info, :$tabs-prompt;
+    my IO::Path $chosen_file = self!_choose_a_path( 'choose-a-file', $current_dir, %opt_path );
+    self!_end_term( %opt_term );
+    return $chosen_file;
 }
 
 
-method !_choose_a_path ( Int $is_a_file ) { #  --> IO::Path
-    my $wildcard = ' ? ';
-    my @pre = ( Any, $is_a_file ?? %!o<choose-file> !! %!o<confirm>, %!o<parent-dir> );
-    my Int $default = %!o<enchanted>  ?? 2 !! 0;
-    my IO::Path $init-dir = %!o<init-dir>.IO;
-    my IO::Path $previous = $init-dir;
+method !_choose_a_path ( Str $caller, IO::Path $current_dir is rw, %opt ) { #  --> IO::Path
+    my @pre;
+    my Int $enchanted_idx;
+    if $caller eq 'choose-a-directory' {
+        @pre = ( Int, %opt<confirm>, %opt<parent-dir> );
+        $enchanted_idx = 2;
+    }
+    elsif $caller eq 'choose-a-file' {
+        @pre = ( Int, %opt<show-files>, %opt<parent-dir> );
+        $enchanted_idx = 2;
+    }
+    elsif $caller eq 'choose-directories' {
+        @pre = ( Int, %opt<confirm>, %opt<add-dirs>, %opt<parent-dir> );
+        $enchanted_idx = 3;
+    }
+    my Int $default = %opt<enchanted> ?? $enchanted_idx !! 0;
+    my IO::Path $previous = $current_dir;
+    my Str $wildcard = ' ? ';
 
     loop {
         my IO::Path @dirs;
         try {
-            if %!o<show-hidden> {
-                @dirs = $init-dir.dir.grep({ .d }).sort;
+            if %opt<show-hidden> {
+                @dirs = $current_dir.dir.grep({ .d }).sort;
             }
             else {
-                @dirs = $init-dir.dir.grep({ .d && .basename !~~ / ^ \. / }).sort;
+                @dirs = $current_dir.dir.grep({ .d && .basename !~~ / ^ \. / }).sort;
             }
-            CATCH { #
-                my $prompt = $init-dir.gist ~ ":\n" ~ $_;
-                $!tc.pause( [ 'Press ENTER to continue.' ], :$prompt );
-                if $init-dir.Str eq '/' {
+            CATCH {
+                my $p = $current_dir.gist ~ ":\n" ~ $_;
+                $!tc.pause( [ 'Press ENTER to continue.' ], :$p );
+                if $current_dir.Str eq '/' {
                     return Empty;
                 }
-                $init-dir = $init-dir.dirname.IO;
+                $current_dir = $current_dir.dirname.IO;
                 next;
             }
         }
-        my @tmp;
-        if %!o<info>.chars {
-            @tmp.push: %!o<info>;
+        my Str @tmp;
+        if $caller eq 'choose-a-file' {
+            @tmp.push: %opt<cs-label> ~ $previous.add( $wildcard );
         }
-        if $is_a_file {
-            @tmp.push: %!o<current-selection-label> ~ _string_gist( $previous.add: $wildcard );
+        elsif $caller eq 'choose-directories' {
+            @tmp.push: %opt<cs-label> ~ %opt<cs-begin> ~ $previous ~ %opt<cs-end>;
         }
         else {
-            @tmp.push: %!o<current-selection-label> ~ _string_gist( $previous );
+            @tmp.push: %opt<cs-label> ~ $previous;
         }
-        if %!o<prompt>.chars {
-            @tmp.push: %!o<prompt>;
+        if %opt<prompt>.defined && %opt<prompt>.chars {
+            @tmp.push: %opt<prompt>;
         }
-        my $choices = [ |@pre, |@dirs.map( { .basename } ) ];
+        my @choices = |@pre, |@dirs.map( { .basename } );
         # Choose
-        my $idx = $!tc.choose(
-            $choices,
-            :$default, :undef( %!o<back> ), :prompt( @tmp.join: "\n" ), :1index, :alignment( %!o<alignment> ),
-            :layout( %!o<layout> ), :order( %!o<order> ), :color( %!o<color> )
+        my Int $idx = $!tc.choose(
+            @choices,
+            :$default, :undef( %opt<back> ), :info( %opt<info> ), :prompt( @tmp.join: "\n" ), :1index, :alignment( %opt<alignment> ),
+            :layout( %opt<layout> ), :order( %opt<order> )
         );
-        if ! $idx.defined || ! $choices[$idx].defined {
+        if ! $idx.defined || ! @choices[$idx].defined {
             return; # IO::Path;
         }
-        if $choices[$idx] eq %!o<confirm> {
+        if @choices[$idx] eq %opt<confirm> {
             return $previous;
         }
-        elsif %!o<choose-file>.defined && $choices[$idx] eq %!o<choose-file> {
-            my IO::Path $file = self!_a_file( $init-dir, $wildcard ) // IO::Path;
+        elsif %opt<show-files>.defined && @choices[$idx] eq %opt<show-files> {
+            my IO::Path $file = self!_a_file( $current_dir, $wildcard, %opt ) // IO::Path;
             next if ! $file.defined;
             return $file;
         }
-        if $choices[$idx] eq %!o<parent-dir> {
-            $init-dir = $init-dir.dirname.IO;
+        elsif %opt<add-dirs>.defined && @choices[$idx] eq %opt<add-dirs> {
+            return $previous, 1;
+        }
+        if @choices[$idx] eq %opt<parent-dir> {
+            $current_dir = $current_dir.dirname.IO;
         }
         else {
-            $init-dir = @dirs[$idx-@pre];
+            $current_dir = @dirs[$idx-@pre];
         }
-        if ( $previous eq $init-dir ) {
+        if ( $previous eq $current_dir ) {
             $default = 0;
         }
         else {
-            $default = %!o<enchanted>  ?? 2 !! 0;
+            $default = %opt<enchanted> ?? $enchanted_idx !! 0;
         }
-        $previous = $init-dir;
+        $previous = $current_dir;
     }
 }
 
 
-method !_a_file ( IO::Path $init-dir, $wildcard ) { #  --> IO::Path
+method !_a_file ( IO::Path $current_dir, $wildcard, %opt ) { #  --> IO::Path
     my Str $previous;
-    my $chosen_file;
+    my Str $chosen_file;
 
     loop {
         my Str @files;
         try {
-            if %!o<show-hidden> {
-                @files = $init-dir.dir.grep( { .f } ).map: { .basename };
+            if %opt<filter> {
+                my $regex = %opt<filter>;
+                @files = $current_dir.dir( :test( / <$regex> / ) ).grep( { .f } ).map: { .basename };
             }
             else {
-                @files = $init-dir.dir.grep( { .f } ).map( { .basename } ).grep: { ! / ^ \. / };
+                @files = $current_dir.dir(                       ).grep( { .f } ).map: { .basename };
+            }
+            if ! %opt<show-hidden> {
+                @files = @files.grep: { ! / ^ \. / };
             }
             CATCH { #
-                my $prompt = $init-dir.gist ~ ":\n" ~ $_;
+                my $prompt = $current_dir.gist ~ ":\n" ~ $_;
                 $!tc.pause( [ 'Press ENTER to continue.' ], :$prompt );
                 return;
             }
         }
         if ! @files.elems {
-            my $prompt =  "Dir: $init-dir\nNo files in this directory.";
-            $!tc.pause( [ %!o<back> ], prompt => $prompt );
+            my $p =  "Dir: $current_dir\nNo files in this directory.";
+            $!tc.pause( [ %opt<back> ], prompt => $p );
             return;
         }
-        my @pre = ( Any );
+        my @pre = ( Str );
         if $chosen_file {
-            @pre.push: %!o<confirm>;
+            @pre.push: %opt<confirm>;
         }
-        my @tmp;
-        @tmp.push: %!o<info> if %!o<info>.chars;
-        @tmp.push: %!o<current-selection-label> ~ _string_gist( $init-dir.add( $previous // $wildcard ) ); # New file
-        @tmp.push: %!o<prompt> if %!o<prompt>.chars;
+        my Str @tmp;
+        @tmp.push: %opt<info> if %opt<info>.chars;
+        @tmp.push: %opt<cs-label> ~ $current_dir.add( $previous // $wildcard );
+        @tmp.push: %opt<prompt> if %opt<prompt>.chars;
         # Choose
         $chosen_file = $!tc.choose(
             [ |@pre, |@files.sort ],
-            :prompt( @tmp.join: "\n" ), :undef( %!o<back> ), :alignment( %!o<alignment> ),
-            :layout( %!o<layout> ), :order( %!o<order> ), :color( %!o<color> )
+            :prompt( @tmp.join: "\n" ), :undef( %opt<back> ), :alignment( %opt<alignment> ),
+            :layout( %opt<layout> ), :order( %opt<order> )
         );
         if ! $chosen_file.defined {
             return;
         }
-        elsif $chosen_file eq %!o<confirm> {
+        elsif $chosen_file eq %opt<confirm> {
             return if ! $previous.defined;
-            return $init-dir.IO.add: $previous;
+            return $current_dir.add: $previous;
         }
         else {
             $previous = $chosen_file;
@@ -391,66 +424,57 @@ sub choose-a-number ( Int $digits = 7, *%opt ) is export( :DEFAULT, :choose-a-nu
 }
 
 method choose-a-number ( Int $digits = 7,
-        Int_0_or_1 :$color                   = $!color,
-        Int_0_or_1 :$mouse                   = $!mouse,
-        Int_0_or_1 :$small-first             = $!small-first,
-        Int_0_or_1 :$hide-cursor             = $!hide-cursor,
-        Int_0_to_2 :$clear-screen            = $!clear-screen,
-        Str        :$info                    = $!info,
-        Str        :$prompt                  = $!prompt,
-        Str        :$current-selection-label = $!current-selection-label // '> ', #/
-        Str        :$thousands-separator     = $!thousands-separator,
-        Str        :$back                    = $!back,
-        Str        :$confirm                 = $!confirm,
-        *%rest                                                      # old names warnings ###
+        Int_0_or_1 :$mouse               = $!mouse,
+        Int_0_or_1 :$small-first         = $!small-first,
+        Int_0_or_1 :$hide-cursor         = $!hide-cursor,
+        Int_0_to_2 :$clear-screen        = $!clear-screen,
+        Int_0_to_2 :$color               = $!color,
+        Str        :$info                = $!info,
+        Str        :$prompt              = $!prompt,
+        Str        :$cs-label            = $!cs-label // '> ', #/
+        Str        :$thousands-separator = $!thousands-separator,
+        Str        :$back                = $!back,
+        Str        :$confirm             = $!confirm,
+        Str        :$reset               = $!reset,
+        List       :$tabs-info           = $!tabs-info,
+        List       :$tabs-prompt         = $!tabs-prompt,
+        *%rest # old names warnings ###
     ) {
-    %!o = :$clear-screen, :$mouse, :$hide-cursor;
-    self!_old_names_warnings( %rest );                              # old names warnings ###
-    self!_init_term();
-    my Int $sep_w;
-    if $color {
-        my $tmp_sep = $thousands-separator.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
-        $sep_w = print-columns( $tmp_sep );
-    }
-    else {
-        $sep_w = print-columns( $thousands-separator );
-    }
+    self!_old_names_warnings( %rest ); # old names warnings ###
+    my %opt_term = :$clear-screen, :$mouse, :$hide-cursor, :$color;
+    self!_init_term( %opt_term );
+    my Int $sep_w = print-columns-ext( $thousands-separator, $color );
     my Int $longest = $digits + ( ( $digits - 1 ) div 3 ) * $sep_w;
     my Str $tab     = '  -  ';
     my Int $tab_w = print-columns( $tab );
+    my Str $back_tmp;
+    my Str $confirm_tmp;
     my Str @ranges;
-    my ( $back_w, $confirm_w );
-    if $color {
-        my $tmp_back    =    $back.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
-        my $tmp_confirm = $confirm.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
-        $back_w    = print-columns( $tmp_back    );
-        $confirm_w = print-columns( $tmp_confirm );
-    }
-    else {
-        $back_w    = print-columns( $back    );
-        $confirm_w = print-columns( $confirm );
-    }
-    my ( $tmp_back, $tmp_confirm );
     if $longest * 2 + $tab_w <= get-term-width() {
-        @ranges = ( sprintf " %*s%s%*s", $longest, '0', $tab, $longest, '9' );
-        for 1 .. $digits - 1 -> $zeros { #
+        @ranges = ( unicode-sprintf( '0', $longest, :1alignment, :$color )
+                  ~ $tab
+                  ~ unicode-sprintf( '9', $longest, :1alignment, :$color ) );
+        for 1 .. $digits - 1 -> $zeros {
             my Str $begin = insert-sep( '1' ~ '0' x $zeros, $thousands-separator );
             my Str $end   = insert-sep( '9' ~ '0' x $zeros, $thousands-separator );
-            @ranges.unshift( sprintf " %*s%s%*s", $longest, $begin, $tab, $longest, $end );
+            @ranges.unshift: unicode-sprintf( $begin, $longest, :1alignment, :$color )
+                           ~ $tab
+                           ~ unicode-sprintf( $end,   $longest, :1alignment, :$color );
         }
-        $tmp_back    = $back    ~ ' ' x ( $longest * 2 + $tab_w + 1 - $back_w );
-        $tmp_confirm = $confirm ~ ' ' x ( $longest * 2 + $tab_w + 1 - $confirm_w );
+        $back_tmp    = unicode-sprintf( $back,    $longest * 2 + $tab_w + 1, :$color );
+        $confirm_tmp = unicode-sprintf( $confirm, $longest * 2 + $tab_w + 1, :$color );
     }
     else {
-        @ranges = ( sprintf "%*s", $longest, '0' ); #
+        @ranges = ( unicode-sprintf( '0', $longest, :$color ) );
         for 1 .. $digits - 1 -> $zeros { #
             my Str $begin = insert-sep( '1' ~ '0' x $zeros, $thousands-separator );
-            @ranges.unshift( sprintf "%*s", $longest, $begin );
+            @ranges.unshift: unicode-sprintf( $begin, $longest, :$color );
         }
-        $tmp_back    = $back    ~ ' ' x ( $longest + 1 - $back_w );
-        $tmp_confirm = $confirm ~ ' ' x ( $longest + 1 - $confirm_w );
+        $back_tmp    = $back;
+        $confirm_tmp = $confirm;
     }
-    my @pre = ( Any, $tmp_confirm );
+
+    my @pre = ( Str, $confirm_tmp );
     my Int %numbers;
     my Str $result;
 
@@ -460,7 +484,7 @@ method choose-a-number ( Int $digits = 7,
         if $info.chars {
             @tmp.push: $info;
         }
-        my $row = sprintf(  "{$current-selection-label}%*s", $longest, $new_number );
+        my $row = sprintf( "{$cs-label}%*s", $longest, $new_number );
         if print-columns( $row ) > get-term-width() {
             $row = $new_number;
         }
@@ -469,9 +493,9 @@ method choose-a-number ( Int $digits = 7,
             @tmp.push: $prompt;
         }
         # Choose
-        my $range = $!tc.choose(
+        my Str $range = $!tc.choose(
             [ |@pre, |( $small-first ?? @ranges.reverse !! @ranges ) ],
-            :prompt( @tmp.join: "\n" ), :2layout, :1alignment, :undef( $tmp_back ), :$color
+            :prompt( @tmp.join: "\n" ), :2layout, :1alignment, :undef( $back_tmp ), :$tabs-prompt
         );
         if ! $range.defined {
             if $result.defined {
@@ -480,12 +504,12 @@ method choose-a-number ( Int $digits = 7,
                 next NUMBER;
             }
             else {
-                self!_end_term();
+                self!_end_term( %opt_term );
                 return;
             }
         }
-        elsif $range eq $tmp_confirm {
-            self!_end_term();
+        elsif $range eq $confirm_tmp {
+            self!_end_term( %opt_term );
             if ! $result.defined {
                 return;
             }
@@ -500,13 +524,12 @@ method choose-a-number ( Int $digits = 7,
         else {
             $zeros = $begin.trim-leading.chars - 1;
         }
-        my @choices   = $zeros ?? ( 1 .. 9 ).map( { $_ ~ '0' x $zeros } ) !! 0 .. 9;
-        my Str $reset = 'reset';
+        my Str @choices = $zeros ?? ( 1 .. 9 ).map( { $_ ~ '0' x $zeros } ) !! '0' .. '9';
         my Str $back_short = '<<';
         # Choose
-        my $num = $!tc.choose( 
-            [ Any, |@choices, $reset ],
-            :prompt( @tmp.join: "\n" ), :1layout, :2alignment, :0order, :undef( $back_short ), :$color
+        my $num = $!tc.choose(
+            [ Str, |@choices, $reset ],
+            :prompt( @tmp.join: "\n" ), :1layout, :2alignment, :0order, :undef( $back_short ), :$tabs-prompt
         );
         if ! $num.defined {
             next;
@@ -531,35 +554,36 @@ sub choose-a-subset ( @list, *%opt ) is export( :DEFAULT, :choose-a-subset ) {
 }
 
 method choose-a-subset ( @list,
-        Int_0_or_1 :$color                       = $!color,
-        Int_0_or_1 :$index                       = $!index,
-        Int_0_or_1 :$mouse                       = $!mouse,
-        Int_0_or_1 :$order                       = $!order,
-        Int_0_or_1 :$hide-cursor                 = $!hide-cursor,
-        Int_0_or_1 :$keep-chosen                 = $!keep-chosen,
-        Int_0_or_1 :$all-by-default              = $!all-by-default,
-        Int_0_to_2 :$clear-screen                = $!clear-screen,
-        Int_0_to_2 :$alignment                   = $!alignment,
-        Int_0_to_2 :$layout                      = 2,
-        List       :$mark                        = $!mark,
-        Str        :$prefix                      = $!prefix // '',
-        Str        :$info                        = $!info,
-        Str        :$prompt                      = 'Choose:',
-        Str        :$current-selection-label     = $!current-selection-label // '', #/
-        Str        :$current-selection-begin     = $!current-selection-begin;
-        Str        :$current-selection-separator = $!current-selection-separator;
-        Str        :$current-selection-end       = $!current-selection-end;
-        Str        :$back                        = $!back,
-        Str        :$confirm                     = $!confirm,
-        *%rest                                                      # old names warnings ###
-
+        Int_0_or_1 :$index          = $!index,
+        Int_0_or_1 :$mouse          = $!mouse,
+        Int_0_or_1 :$order          = $!order,
+        Int_0_or_1 :$hide-cursor    = $!hide-cursor,
+        Int_0_or_1 :$keep-chosen    = $!keep-chosen,
+        Int_0_or_1 :$all-by-default = $!all-by-default,
+        Int_0_to_2 :$clear-screen   = $!clear-screen,
+        Int_0_to_2 :$color          = $!color,
+        Int_0_to_2 :$alignment      = $!alignment,
+        Int_0_to_2 :$layout         = 2,
+        List       :$mark           = $!mark,
+        List       :$tabs-info      = $!tabs-info,
+        List       :$tabs-prompt    = $!tabs-prompt,
+        Str        :$prefix         = $!prefix // '',
+        Str        :$info           = $!info,
+        Str        :$prompt         = 'Choose:',
+        Str        :$cs-label       = $!cs-label // '', #/
+        Str        :$cs-begin       = $!cs-begin;
+        Str        :$cs-separator   = $!cs-separator;
+        Str        :$cs-end         = $!cs-end;
+        Str        :$back           = $!back,
+        Str        :$confirm        = $!confirm,
+        *%rest # old names warnings ###
     ) {
-    %!o = :$clear-screen, :$mouse, :$hide-cursor;
-    self!_old_names_warnings( %rest );                              # old names warnings ###
-    self!_init_term();
+    self!_old_names_warnings( %rest ); # old names warnings ###
+    my %opt_term = :$clear-screen, :$mouse, :$hide-cursor, :$color;
+    self!_init_term( %opt_term );
     my List $new_idx = [];
     my List $new_val = [ @list ];
-    my @pre = ( Any, $confirm );
+    my @pre = ( Int, $confirm );
     my List $initially_marked = [ |$mark.map: { $_ + @pre.elems } ];
     my @bu;
 
@@ -569,14 +593,14 @@ method choose-a-subset ( @list,
              @tmp.push: $info;
         }
         my $sofar;
-        if $current-selection-label.defined {
-            $sofar ~= $current-selection-label;
+        if $cs-label.defined {
+            $sofar ~= $cs-label;
         }
         if $new_idx.elems {
-            $sofar ~= $current-selection-begin ~ @list[|$new_idx].map( { $_ // '' } ).join( $current-selection-separator ) ~ $current-selection-end;
+            $sofar ~= $cs-begin ~ @list[|$new_idx].map( { $_ // '' } ).join( $cs-separator ) ~ $cs-end;
         }
         elsif $all-by-default {
-            $sofar ~= $current-selection-begin ~ '*' ~ $current-selection-end;
+            $sofar ~= $cs-begin ~ '*' ~ $cs-end;
         }
         if $sofar.defined {
             @tmp.push: $sofar;
@@ -584,12 +608,12 @@ method choose-a-subset ( @list,
         if $prompt.chars {
             @tmp.push: $prompt;
         }
-        my $choices = [ |@pre, |$new_val.map: { $prefix ~ $_.gist } ];
+        my @choices = |@pre, |$new_val.map: { $prefix ~ $_.gist };
         # Choose
         my Int @idx = $!tc.choose-multi(
-            $choices,
-            :prompt( @tmp.join: "\n" ), :meta-items( |^@pre ), :undef( $back ), :lf( 0, ( $current-selection-label // '' ).chars ), # /
-            :$alignment, :1index, :$layout, :$order, :mark( $initially_marked ), :2include-highlighted, :$color
+            @choices,
+            :prompt( @tmp.join: "\n" ), :meta-items( |^@pre ), :undef( $back ), :lf( 0, ( $cs-label // '' ).chars ), # /
+            :$alignment, :1index, :$layout, :$order, :mark( $initially_marked ), :2include-highlighted, :$tabs-prompt
         );
         if $initially_marked.defined {
             $initially_marked = List;
@@ -599,7 +623,7 @@ method choose-a-subset ( @list,
                 ( $new_val, $new_idx ) = @bu.pop;
                 next;
             }
-            self!_end_term();
+            self!_end_term( %opt_term );
             return;
         }
         @bu.push( [ [ |$new_val ], [ |$new_idx ] ] );
@@ -608,7 +632,7 @@ method choose-a-subset ( @list,
             $ok = True;
             @idx.shift;
         }
-        my @tmp_idx;
+        my Int @tmp_idx;
         for @idx.reverse {
             my $i = $_ - @pre;
             if ! $keep-chosen {
@@ -625,7 +649,7 @@ method choose-a-subset ( @list,
             if ! $new_idx.elems && $all-by-default {
                 $new_idx = [ 0 .. @list.end ];
             }
-            self!_end_term();
+            self!_end_term( %opt_term );
             return $index ?? $new_idx !! [ @list[|$new_idx] ];
         }
     }
@@ -637,36 +661,31 @@ sub settings-menu ( @menu, %setup, *%opt ) is export( :DEFAULT, :settings-menu )
 }
 
 method settings-menu ( @menu, %setup,
-        Int_0_or_1 :$color                   = $!color,
         Int_0_or_1 :$mouse                   = $!mouse,
         Int_0_or_1 :$hide-cursor             = $!hide-cursor,
         Int_0_to_2 :$clear-screen            = $!clear-screen,
+        Int_0_to_2 :$color                   = $!color,
         Str        :$info                    = $!info,
         Str        :$prompt                  = 'Choose:',
         Str        :$back                    = $!back,
         Str        :$confirm                 = $!confirm,
-        Str        :$current-selection-label = $!current-selection-label,
-        *%rest                                                      # old names warnings ###
+        Str        :$cs-label                = $!cs-label,
+        List       :$tabs-info               = $!tabs-info,
+        *%rest # old names warnings ###
     ) {
-    %!o = :$clear-screen, :$mouse, :$hide-cursor;
-    self!_old_names_warnings( %rest );                              # old names warnings ###
-    self!_init_term();
+    self!_old_names_warnings( %rest ); # old names warnings ###
+    my %opt_term = :$clear-screen, :$mouse, :$hide-cursor, :$color;
+    self!_init_term( %opt_term );
     my Int $longest = 0;
     my %name_w;
     my %new_setup;
     for @menu -> ( Str $key, Str $name, $ ) {
-        if $color {
-            my $tmp_name = $name.subst( / \e \[ <[ \d \; ]>* m /, '', :g );
-            %name_w{$key} = print-columns( $tmp_name );
-        }
-        else {
-            %name_w{$key} = print-columns( $name );
-        }
+        %name_w{$key} = print-columns-ext( $name, $color );
         $longest max= %name_w{$key};
         %setup{$key} //= 0;
         %new_setup{$key} = %setup{$key};
     }
-    my @pre = Any, $confirm;
+    my @pre = Int, $confirm;
     my Str @print_keys;
     for @menu -> ( Str $key, Str $name, @values ) {
         my $current = @values[%new_setup{$key}];
@@ -678,8 +697,8 @@ method settings-menu ( @menu, %setup,
 
     loop {
         my @tmp;
-        if $current-selection-label.defined {
-            @tmp.push: $current-selection-label ~ %new_setup.keys.map({ "$_=%new_setup{$_}" }).join: ', ';
+        if $cs-label.defined {
+            @tmp.push: $cs-label ~ %new_setup.keys.map({ "$_=%new_setup{$_}" }).join: ', ';
         }
         if $prompt.defined && $prompt.chars {
             @tmp.push: $prompt;
@@ -688,10 +707,10 @@ method settings-menu ( @menu, %setup,
         # Choose
         my Int $idx = $!tc.choose(
             [ |@pre, |@print_keys ],
-            :$info, :prompt( $comb_prompt ), :1index, :$default, :2layout, :0alignment, :undef( $back ), :$color
+            :$info, :prompt( $comb_prompt ), :1index, :$default, :2layout, :0alignment, :undef( $back ), :$tabs-info
         );
         if ! $idx {
-            self!_end_term();
+            self!_end_term( %opt_term );
             return False; ###
         }
         elsif $idx == @pre.end {
@@ -703,7 +722,7 @@ method settings-menu ( @menu, %setup,
                 %setup{$key} = %new_setup{$key};
                 $change++;
             }
-            self!_end_term();
+            self!_end_term( %opt_term );
             return $change.so; ###
         }
         my \i = $idx-@pre.elems;
@@ -742,19 +761,18 @@ sub insert-sep ( $num, $thousands-separator = ' ' ) is export( :insert-sep ) {
         return $num;
     }
     my $new = $<sign> // '';
-    $new   ~= $<int>.flip.comb( / . ** 1..3 / ).join( "\x[feff]\x[feff]" ).flip;
-    $new.=subst( /"\x[feff]\x[feff]"/, $thousands-separator, :g ); # to preserve ansi color escapes
-    $new   ~= $<rest> // '';
+    $new ~= $<int>.flip.comb( / . ** 1..3 / ).join( "\x[feff]\x[feff]" ).flip;
+    $new.=subst( /"\x[feff]\x[feff]"/, $thousands-separator, :g ); # to preserve ansi color escapes in the thousands-separator
+    $new ~= $<rest> // '';
     return $new;
 }
 
-#sub unicode-sprintf ( Str $str, Int $avail_col_w, @cache? :$alignment, :$add_dots ) is export( :unicode-sprintf ) { #
-sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $alignment, @cache? ) is export( :unicode-sprintf ) {
-    my Int $str_length = print-columns( $str );
+sub unicode-sprintf ( Str $str, Int $avail_col_w, @cache?, :$alignment = 0, :$add_dots = 0, :$color = 0 ) is export( :unicode-sprintf ) {
+    my Int $str_length = print-columns-ext( $str, $color );
     if $str_length > $avail_col_w {
-        #if $add_dots {
-        #   return to-printwidth( $str, $avail_col_w - 3 ) ~ '...';
-        #}
+        if $add_dots {
+           return to-printwidth( $str, $avail_col_w - 3 ) ~ '...';
+        }
         return to-printwidth( $str, $avail_col_w, False, @cache ).[0];
     }
     elsif $str_length < $avail_col_w {
@@ -774,6 +792,17 @@ sub unicode-sprintf ( Str $str, Int $avail_col_w, Int $alignment, @cache? ) is e
         return $str;
     }
 }
+
+sub print-columns-ext ( $str, Int $color ) { # Str $str
+    if ( $color ) { # && $str ~~ Str
+        return print-columns( $str.subst( / \e \[ <[\d;]>* m /, '', :g ) );
+    }
+    else {
+        return print-columns( $str );
+    }
+}
+
+
 
 
 
@@ -797,36 +826,6 @@ The constructor method C<new> can be called with optional named arguments:
 
 =end code
 
-=head2 DEPRECATIONS
-
-The use of C<choose-dirs> is deprecated - use C<choose-directories> instead.
-
-The use of C<choose-a-dir> is deprecated - use C<choose-a-directory> instead.
-
-The deprecated routine names will be removed.
-
-=head2 RENAMED OPTIONS
-
-    <Old names>:        <New names>:
-
-    justify             alignment
-
-    dir                 init-dir
-
-    up                  parent-dir
-
-    name                current-selection-label
-
-    sofar-begin         current-selection-begin
-
-    sofar-separator     current-selection-separator
-
-    sofar-end           current-selection-end
-
-    thsd-sep            thousands-separator
-
-Only the new option names work.
-
 =head1 ROUTINES
 
 Values in brackets are default values.
@@ -843,7 +842,10 @@ Values: [0],1.
 
 Enables the support for color and text formatting escape sequences.
 
-Values: [0],1.
+Setting color to 1 enables the support for color and text formatting escape sequences except for the current selected
+element. If set to 2, also for the current selected element the color support is enabled (inverted colors).
+
+Values: [0],1,2.
 
 =item1 hide-cursor
 
@@ -864,14 +866,14 @@ SpaceBar key.
 
 Values: [0],1.
 
-=item1 current-selection-label
+=item1 cs-label
 
-The value of I<current-selection-label> is a string which is placed in front of the "chosen so far" info output.
+The value of I<cs-label> is a string which is placed in front of the "chosen so far" info output.
 
-With C<settings-menu> the "chosen so far" info output is only shown if I<current-selection-label> is defined.
+With C<settings-menu> the "chosen so far" info output is only shown if I<cs-label> is defined.
 
-Defaults: C<choose-directories>: 'Dirs: ', C<choose-a-directory>: 'Dir: ', C<choose-a-file>: 'File: ',
-C<choose-a-number>: ' >', C<choose-a-subset>: '', C<settings-menu>: undef
+Defaults: C<choose-directories>: '> ', C<choose-a-directory>: 'Dir: ', C<choose-a-file>: 'File: ',
+C<choose-a-number>: '> ', C<choose-a-subset>: '', C<settings-menu>: undef
 
 The "chosen so far" info output is placed between the I<info> string and the I<prompt> string.
 
@@ -975,6 +977,14 @@ the files of the current directory. To return the chosen file select the "confir
 
 Options as in L<#choose-a-directory> plus
 
+=item1 filter
+
+If set, the value of this option is treated as a regex pattern.
+
+Only files matching this pattern will be displayed.
+
+The regex pattern is used as the value of C<dir>s C<:test> parameter.
+
 =item1 show-files
 
 Customize the string of the menu entry "show-files".
@@ -991,7 +1001,7 @@ Default: C<SHOW-FILES>
 
 C<choose-directories> is similar to C<choose-a-directory> but it is possible to return multiple directories.
 
-Use the "add-dir" menu entry to add the current directory to the list of chosen directories.
+Use the "add-dirs" menu entry to add the current directory to the list of chosen directories.
 
 To return the list of chosen directories select the "confirm" menu entry.
 
@@ -1000,9 +1010,9 @@ choose-directories to return nothing.
 
 Options as in L<#choose-a-directory> plus
 
-=item1 add-dir
+=item1 add-dirs
 
-Customize the string of the menu entry "add-dir".
+Customize the string of the menu entry "add-dirs".
 
 Default: C<ADD-DIR>
 
@@ -1010,7 +1020,7 @@ Default: C<ADD-DIR>
 
 =begin code
 
-    my $number = choose-a-number( 5, :name<Testnumber>, ... );
+    my $number = choose-a-number( 5, :cs-label<Testnumber>, ... );
 
 =end code
 
@@ -1048,6 +1058,10 @@ The subset is returned as an array.
 The first argument is the list of choices.
 
 Options:
+
+=item1 all-by-default
+
+If enabled, all elements are selected if C<CONFIRM> is chosen without any selected elements.
 
 =item1 alignment
 
@@ -1093,22 +1107,22 @@ The chosen elements are returned without this I<prefix>.
 
 Default: empty string.
 
-=item1 current-selection-begin
+=item1 cs-begin
 
-Info output: the I<current-selection-begin> string is placed between the I<current-selection-label> string and the
+Info output: the I<cs-begin> string is placed between the I<cs-label> string and the
 chosen elements as soon as an element has been chosen.
 
 Default: empty string
 
-=item1 current-selection-separator
+=item1 cs-separator
 
-Info output: I<current-selection-separator> is placed between the chosen list elements.
+Info output: I<cs-separator> is placed between the chosen list elements.
 
 Default: C< ,>
 
-=item1 current-selection-end
+=item1 cs-end
 
-Info output: as soon as elements have been chosen the I<current-selection-end> string is placed at the end of the chosen elements.
+Info output: as soon as elements have been chosen the I<cs-end> string is placed at the end of the chosen elements.
 
 Default: empty string
 
@@ -1157,7 +1171,6 @@ This hash is edited in place: the changes made by the user are saved in this has
 
 Options: see L<#Options available for all subroutines>.
 
-
 When C<settings-menu> is called, it displays for each list entry a row with the prompt string and the current value.
 
 It is possible to scroll through the rows. If a row is selected, the set and displayed value changes to the next.After
@@ -1167,7 +1180,47 @@ If the "back" menu entry is chosen, C<settings-menu> does not apply the made cha
 "confirm" menu entry is chosen, C<settings-menu> applies the made changes in place to the passed configuration hash
 (second argument) and returns the number of made changes.
 
-Setting the option I<current-selection-label> to a defined value adds an info output line.
+Setting the option I<cs-label> to a defined value adds an info output line.
+
+=head2 DEPRECATIONS
+
+The use of C<choose-dirs> is deprecated - use C<choose-directories> instead.
+
+The use of C<choose-a-dir> is deprecated - use C<choose-a-directory> instead.
+
+The deprecated routine names will be removed.
+
+=head2 RENAMED OPTIONS
+
+    <Old names>:                <New names>:
+
+    justify                     alignment
+
+    dir                         init-dir
+
+    up                          parent-dir
+
+    name                        cs-label
+
+    current-selection-label     cs-label
+
+    sofar-begin                 cs-begin
+
+    current-selection-begin     cs-begin
+
+    sofar-separator             cs-separator
+
+    current-selection-separator cs-separator
+
+    sofar-end                   cs-end
+
+    current-selection-end       cs-end
+
+    thsd-sep                    thousands-separator
+
+    add-dir                     add-dirs
+
+Only the new option names work.
 
 =head1 AUTHOR
 
@@ -1181,7 +1234,7 @@ help.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2019 Matthäus Kiem.
+Copyright 2016-2020 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
