@@ -62,7 +62,7 @@ The value of *cs-label* is a string which is placed in front of the "chosen so f
 
 With `settings-menu` the "chosen so far" info output is only shown if *cs-label* is defined.
 
-Defaults: `choose-directories`: '> ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: ', `choose-a-number`: '> ', `choose-a-subset`: '', `settings-menu`: undef
+Defaults: `choose-directories`: '> ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: ', `choose-a-number`: 'Dirs: ', `choose-a-subset`: '', `settings-menu`: undef
 
 The "chosen so far" info output is placed between the *info* string and the *prompt* string.
 
@@ -170,7 +170,7 @@ The regex pattern is used as the value of `dir`s `:test` parameter.
 
 Customize the string of the menu entry "show-files".
 
-Default: `SHOW-FILES`
+Default: `[Show-Files]`
 
 choose-directories
 ------------------
@@ -191,7 +191,7 @@ Options as in [choose-a-directory](#choose-a-directory) plus
 
 Customize the string of the menu entry "add-dirs".
 
-Default: `ADD-DIR`
+Default: `[Add-Dir]`
 
 choose-a-number
 ---------------

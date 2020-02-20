@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.3.1>;
+unit class Term::Choose::Util:ver<1.3.2>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -25,9 +25,9 @@ has Int_0_to_2 $.layout          = 1;
 has List       $.mark            = [];
 has List       $.tabs-info       = [];  # no doc
 has List       $.tabs-prompt     = [];  # no doc
-has Str $.add-dirs               = 'Add-DIRS';
+has Str $.add-dirs               = '[Add-Dirs]';
 has Str $.back                   = 'BACK';
-has Str $.show-files             = 'Show-FILES';
+has Str $.show-files             = '[Show-Filrs]';
 has Str $.confirm                = 'CONFIRM';
 has Str $.cs-begin               = '';
 has Str $.cs-label;
@@ -115,7 +115,7 @@ method choose-directories (
         Int_0_to_2 :$layout       = $!layout,
         Str        :$init-dir     = $!init-dir,
         Str        :$info         = $!info,
-        Str        :$cs-label     = $!cs-label // '> ', #/
+        Str        :$cs-label     = $!cs-label // 'Dirs: ', #/
         Str        :$prompt       = $!prompt,
         Str        :$back         = $!back,
         Str        :$confirm      = $!confirm,
@@ -136,19 +136,10 @@ method choose-directories (
     my @bu;
 
     loop {
-        my Int $term_w = get-term-width();
-        my Int $cs_label_w = print-columns-ext( $cs-label, $color );
-        my Str $tmp_info = line-fold(
-            $cs-label ~ @chosen_dirs.join( ', ' ),
-            $term_w,
-            :subseq-tab( ' ' x $cs_label_w ), :$color
-        ).join: "\n";
-        my $prompt = $tmp_info ~ "\n" ~ ' ' ~ "\n" ~ 'Browse:';
         if $mode eq $browse {
-            my %opt_path = :cs-label( 'cwd: ' ), :cs-begin( '' ), :cs-end( '' ), :$prompt, :info( '' ),
-                           :$order, :$show-hidden, :$enchanted, :$alignment, :$layout, :$tabs-info, :$tabs-prompt,
-                           :$init-dir, :$back, :$confirm, :$add-dirs, :$parent-dir;
-            ( $current_dir, my Int $to_add_dirs ) = self!_choose_a_path( 'choose-directories', $current_dir, %opt_path );
+            my %opt_path = :$cs-label, :info( '' ), :$order, :$prompt, :$show-hidden, :$enchanted, :$alignment, :$layout,
+                           :$tabs-info, :$tabs-prompt, :$init-dir, :$back, :$confirm, :$add-dirs, :$parent-dir, :$color;
+            ( $current_dir, my Int $to_add_dirs ) = self!_choose_a_path( 'choose-directories', $current_dir, %opt_path, :@chosen_dirs );
             if ! $current_dir.defined {
                 if @bu.elems {
                     ( $current_dir, @chosen_dirs ) = @bu.pop;
@@ -182,11 +173,21 @@ method choose-directories (
                     next;
                 }
             }
+            my Str $tmp_info = $info // '';
+            if $tmp_info.chars {
+                $tmp_info ~= "\n";
+            }
+            my Int $cs_label_w = print-columns-ext( $cs-label, $color );
+            $tmp_info ~= line-fold(
+                $cs-label ~ @chosen_dirs.join( ', ' ),
+                get-term-width(),
+                :subseq-tab( ' ' x $cs_label_w ), :$color
+            ).join: "\n";
+            my Str $prompt = 'Choose directories:' ~ "\n>" ~ $current_dir;
             my $idxs = self.choose-a-subset(
                 @avail_dirs.map({ .basename }).sort,
-                :back( '<<' ), :confirm( 'OK' ), :prompt( 'Choose:' ), :cs-begin( '+ ' ), :cs-label( '' ),
-                :info( 'cwd: ' ~ $current_dir ~ '' ~ "\n" ~ $tmp_info ),
-                :1index, :0layout, :0hide-cursor
+                :back( '<<' ), :confirm( 'OK' ), :$prompt, :cs-begin( '+ ' ), :cs-label( '' ),
+                :info( $tmp_info ), :1index, :0layout, :0hide-cursor
             );
             if $idxs.defined && $idxs.elems {
                 @bu.push: [ $current_dir, [ |@chosen_dirs ] ];
@@ -274,7 +275,7 @@ method choose-a-file (
 }
 
 
-method !_choose_a_path ( Str $caller, IO::Path $current_dir is rw, %opt ) { #  --> IO::Path
+method !_choose_a_path ( Str $caller, IO::Path $current_dir is rw, %opt, :@chosen_dirs ) { #  --> IO::Path
     my @pre;
     my Int $enchanted_idx;
     if $caller eq 'choose-a-directory' {
@@ -315,15 +316,25 @@ method !_choose_a_path ( Str $caller, IO::Path $current_dir is rw, %opt ) { #  -
         my Str @tmp;
         if $caller eq 'choose-a-file' {
             @tmp.push: %opt<cs-label> ~ $previous.add( $wildcard );
+            if %opt<prompt>.defined && %opt<prompt>.chars {
+                @tmp.push: %opt<prompt>;
+            }
         }
         elsif $caller eq 'choose-directories' {
-            @tmp.push: %opt<cs-label> ~ %opt<cs-begin> ~ $previous ~ %opt<cs-end>;
+            my Int $cs_label_w = print-columns-ext( %opt<cs-label>, %opt<color> );
+            @tmp.push: line-fold(
+                %opt<cs-label> ~ @chosen_dirs.join( ', ' ),
+                get-term-width(),
+                :subseq-tab( ' ' x $cs_label_w ), :color( %opt<color> )
+            ).join: "\n";
+            @tmp.push: %opt<prompt>.defined && %opt<prompt>.chars ?? %opt<prompt> !! 'Browse directories:';
+            @tmp.push: ">$previous";
         }
         else {
             @tmp.push: %opt<cs-label> ~ $previous;
-        }
-        if %opt<prompt>.defined && %opt<prompt>.chars {
-            @tmp.push: %opt<prompt>;
+            if %opt<prompt>.defined && %opt<prompt>.chars {
+                @tmp.push: %opt<prompt>;
+            }
         }
         my @choices = |@pre, |@dirs.map( { .basename } );
         # Choose
@@ -873,7 +884,7 @@ The value of I<cs-label> is a string which is placed in front of the "chosen so 
 With C<settings-menu> the "chosen so far" info output is only shown if I<cs-label> is defined.
 
 Defaults: C<choose-directories>: '> ', C<choose-a-directory>: 'Dir: ', C<choose-a-file>: 'File: ',
-C<choose-a-number>: '> ', C<choose-a-subset>: '', C<settings-menu>: undef
+C<choose-a-number>: 'Dirs: ', C<choose-a-subset>: '', C<settings-menu>: undef
 
 The "chosen so far" info output is placed between the I<info> string and the I<prompt> string.
 
@@ -989,7 +1000,7 @@ The regex pattern is used as the value of C<dir>s C<:test> parameter.
 
 Customize the string of the menu entry "show-files".
 
-Default: C<SHOW-FILES>
+Default: C<[Show-Files]>
 
 =head2 choose-directories
 
@@ -1014,7 +1025,7 @@ Options as in L<#choose-a-directory> plus
 
 Customize the string of the menu entry "add-dirs".
 
-Default: C<ADD-DIR>
+Default: C<[Add-Dir]>
 
 =head2 choose-a-number
 
