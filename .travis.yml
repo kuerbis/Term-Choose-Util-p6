@@ -1,10 +1,7 @@
-#branches:
-#  except:
-#    - gh-pages
-language: perl6
-perl6:
-  - latest
-install:
-  - rakudobrew build zef
-  - zef install Term::Choose
-sudo: false
+language:  minimal
+
+services:  docker
+
+install: docker pull jjmerelo/raku-test
+
+script: docker run -t -v  $TRAVIS_BUILD_DIR:/test jjmerelo/raku-test
