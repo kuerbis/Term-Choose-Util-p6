@@ -27,7 +27,7 @@ has List       $.tabs-info       = [];  # no doc
 has List       $.tabs-prompt     = [];  # no doc
 has Str $.add-dirs               = '[Add-Dirs]';
 has Str $.back                   = 'BACK';
-has Str $.show-files             = '[Show-Filrs]';
+has Str $.show-files             = '[Show-Files]';
 has Str $.confirm                = 'CONFIRM';
 has Str $.cs-begin               = '';
 has Str $.cs-label;
