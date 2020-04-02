@@ -58,13 +58,11 @@ Values: [0],1.
 
   * cs-label
 
-The value of *cs-label* is a string which is placed in front of the "chosen so far" info output.
+The value of *cs-label* (current selection label) is a string which is placed in front of the current selection.
 
-With `settings-menu` the "chosen so far" info output is only shown if *cs-label* is defined.
+Defaults: `choose-directories`: 'Dirs: ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: '. For `choose-a-number`, `choose-a-subset` and `settings-menu` the default is undefined.
 
-Defaults: `choose-directories`: '> ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: ', `choose-a-number`: 'Dirs: ', `choose-a-subset`: '', `settings-menu`: undef
-
-The "chosen so far" info output is placed between the *info* string and the *prompt* string.
+The current selection output is placed between the info string and the prompt string.
 
   * prompt
 
@@ -145,7 +143,7 @@ Values: 0,[1].
 
 Customize the string of the menu entry "parent-dir".
 
-Default: PARENT-DIR
+Default: `..`
 
   * [Options available for all subroutines](#Options available for all subroutines)
 
@@ -191,7 +189,7 @@ Options as in [choose-a-directory](#choose-a-directory) plus
 
 Customize the string of the menu entry "add-dirs".
 
-Default: `[Add-Dir]`
+Default: `[Choose-Dirs]`
 
 choose-a-number
 ---------------
@@ -332,57 +330,35 @@ The second argument is a hash:
 
 This hash is edited in place: the changes made by the user are saved in this hash.
 
-Options: see [Options available for all subroutines](#Options available for all subroutines).
+Options:
+
+  * cs-begin
+
+Info output: the *cs-begin* string is placed between the *cs-label* string and the key-value pairs.
+
+Default: empty string
+
+  * cs-separator
+
+Info output: *cs-separator* is placed between the key-value pairs.
+
+Default: `,`
+
+  * cs-end
+
+Info output: the *cs-end* string is placed at the end of the key-value pairs.
+
+Default: empty string
+
+  * [Options available for all subroutines](#Options available for all subroutines)
+
+The info output line is only shown if the option *cs-label* is set to a defined value.
 
 When `settings-menu` is called, it displays for each list entry a row with the prompt string and the current value.
 
 It is possible to scroll through the rows. If a row is selected, the set and displayed value changes to the next.After scrolling through the list once the cursor jumps back to the top row.
 
 If the "back" menu entry is chosen, `settings-menu` does not apply the made changes and returns nothing. If the "confirm" menu entry is chosen, `settings-menu` applies the made changes in place to the passed configuration hash (second argument) and returns the number of made changes.
-
-Setting the option *cs-label* to a defined value adds an info output line.
-
-DEPRECATIONS
-------------
-
-The use of `choose-dirs` is deprecated - use `choose-directories` instead.
-
-The use of `choose-a-dir` is deprecated - use `choose-a-directory` instead.
-
-The deprecated routine names will be removed.
-
-RENAMED OPTIONS
----------------
-
-    <Old names>:                <New names>:
-
-    justify                     alignment
-
-    dir                         init-dir
-
-    up                          parent-dir
-
-    name                        cs-label
-
-    current-selection-label     cs-label
-
-    sofar-begin                 cs-begin
-
-    current-selection-begin     cs-begin
-
-    sofar-separator             cs-separator
-
-    current-selection-separator cs-separator
-
-    sofar-end                   cs-end
-
-    current-selection-end       cs-end
-
-    thsd-sep                    thousands-separator
-
-    add-dir                     add-dirs
-
-Only the new option names work.
 
 AUTHOR
 ======
