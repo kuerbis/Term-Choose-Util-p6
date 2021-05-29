@@ -15,7 +15,7 @@ CONSTRUCTOR
 
 The constructor method `new` can be called with optional named arguments:
 
-        my $new = Term::Choose::Util.new( :mouse(1), ... )
+        my $new = Term::Choose::Util.new( :mouse( 1 ), ... )
 
 ROUTINES
 ========
@@ -85,7 +85,7 @@ Default: `CONFIRM`.
 choose-a-directory
 ------------------
 
-        $chosen-directory = choose-a-directory( :layout(1), ... )
+        my $chosen-directory = choose-a-directory( :layout( 1 ), ... )
 
 With `choose-a-directory` the user can browse through the directory tree and choose a directory which is returned.
 
@@ -150,7 +150,7 @@ Default: `..`
 choose-a-file
 -------------
 
-        $chosen-file = choose-a-file( :layout(1), ... )
+        my $chosen-file = choose-a-file( :1layout, ... )
 
 Browse the directory tree the same way as described for `choose-a-directory`. Select the "show-files" menu entry to get the files of the current directory. To return the chosen file select the "confirm" menu entry.
 
@@ -168,12 +168,12 @@ The regex pattern is used as the value of `dir`s `:test` parameter.
 
 Customize the string of the menu entry "show-files".
 
-Default: `[Show-Files]`
+Default: >`Show Files`
 
 choose-directories
 ------------------
 
-        @chosen-directories = choose-directories( :layout(1), ... )
+        my @chosen-directories = choose-directories( :1layout, ... )
 
 `choose-directories` is similar to `choose-a-directory` but it is possible to return multiple directories.
 
@@ -189,7 +189,7 @@ Options as in [choose-a-directory](#choose-a-directory) plus
 
 Customize the string of the menu entry "add-dirs".
 
-Default: `[Choose-Dirs]`
+Default: >`CHOOSE Dirs`
 
 choose-a-number
 ---------------
@@ -201,6 +201,12 @@ This function lets you choose/compose a number (unsigned integer) which is then 
 The fist argument is an integer and determines the range of the available numbers. For example setting the first argument to `4` would offer a range from `0` to `9999`. If not set, it defaults to `7`.
 
 Options:
+
+  * default-number
+
+Set a default number (unsigned integer in the range of the available numbers).
+
+Default: undef
 
   * small-first
 
@@ -217,7 +223,7 @@ Default: `,`
 choose-a-subset
 ---------------
 
-        $subset = choose-a-subset( @available-items, :layout( 1 ), ... )
+        my $subset = choose-a-subset( @available-items, :1layout, ... )
 
 `choose-a-subset` lets you choose a subset from a list.
 
