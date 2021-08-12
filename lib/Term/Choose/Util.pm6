@@ -179,7 +179,7 @@ method choose-directories ( # documentation
                 :info( $subset_info ), :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ),
                 :cs-label( 'Add to Dirs: ' ), :$page, :$footer, :$keep, :1index, :0hide-cursor, :0clear-screen
             );
-            if $idxs.defined && $idxs.elems {
+            if $idxs.defined && $idxs.elems { ##
                 @bu.push: [ $dir, [ |@chosen_dirs ] ];
                 @chosen_dirs.push: |@avail_dirs[|$idxs];
             }
@@ -367,7 +367,7 @@ method !_a_file ( $tc, IO::Path $dir, %opt ) { #  --> IO::Path
             @pre.push: %opt<confirm>;
         }
         # Choose
-        $chosen_file = $tc.choose( # ### 
+        $chosen_file = $tc.choose(
             [ |@pre, |@files.sort ],
             :info( %opt<info> ), :$prompt, :alignment( %opt<alignment> ), :layout( %opt<layout> ),
             :order( %opt<order> ), :tabs-info( %opt<tabs-info> ), :tabs-prompt( %opt<tabs-prompt> ),
