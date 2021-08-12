@@ -1,6 +1,14 @@
 Revision history for Term::Choose::Util
 
 
+1.3.6   2021-08-12
+        - Removed option 'enchanted'.
+        - New undocumented options.
+        - Update 'choose-directories'.
+        - Update 'choose-a-file'.
+        - Bugfix 'line-fold' 'subseq-tab'.
+        - Change scope of Term::Choose.
+
 1.3.5   2021-05-29
         - Bugfixes in 'choose-a-number', 'choose-a-subset' and 'choose-directories'.
         - choose-a-number: new option 'default-number'.

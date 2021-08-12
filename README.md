@@ -111,14 +111,6 @@ Values: [0],1,2.
 
 Set the starting point directory. Defaults to the home directory (`$*HOME`).
 
-  * enchanted
-
-If set to 1, the default cursor position is on the "parent-dir" menu entry. If the directory name remains the same after an user input, the default cursor position changes to "back".
-
-If set to 0, the default cursor position is on the "back" menu entry.
-
-Values: 0,[1].
-
   * layout
 
 See the option *layout* in [Term::Choose](https://github.com/kuerbis/Term-Choose-p6)
@@ -152,7 +144,7 @@ choose-a-file
 
         my $chosen-file = choose-a-file( :1layout, ... )
 
-Browse the directory tree the same way as described for `choose-a-directory`. Select the "show-files" menu entry to get the files of the current directory. To return the chosen file select the "confirm" menu entry.
+Choose the file directory and then choose a file from the chosen directory. To return the chosen file select the "*confirm*" menu entry.
 
 Options as in [choose-a-directory](#choose-a-directory) plus
 
@@ -164,12 +156,6 @@ Only files matching this pattern will be displayed.
 
 The regex pattern is used as the value of `dir`s `:test` parameter.
 
-  * show-files
-
-Customize the string of the menu entry "show-files".
-
-Default: >`Show Files`
-
 choose-directories
 ------------------
 
@@ -177,19 +163,7 @@ choose-directories
 
 `choose-directories` is similar to `choose-a-directory` but it is possible to return multiple directories.
 
-Use the "add-dirs" menu entry to add the current directory to the list of chosen directories.
-
-To return the list of chosen directories select the "confirm" menu entry.
-
-The "back" menu entry removes the last added directory. If the list of chosen directories is empty, "back" causes choose-directories to return nothing.
-
-Options as in [choose-a-directory](#choose-a-directory) plus
-
-  * add-dirs
-
-Customize the string of the menu entry "add-dirs".
-
-Default: >`CHOOSE Dirs`
+Options as in [choose-a-directory](#choose-a-directory).
 
 choose-a-number
 ---------------
