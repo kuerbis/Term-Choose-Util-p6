@@ -1,6 +1,10 @@
 Revision history for Term::Choose::Util
 
 
+1.3.7   2021-08-16
+        - Fixed empty return values.
+        - Code refactoring.
+
 1.3.6   2021-08-12
         - Removed options 'enchanted', 'parent-dir', 'add-dirs' and 'show-files'.
         - New undocumented options.

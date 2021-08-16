@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.3.6>;
+unit class Term::Choose::Util:ver<1.3.7>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -25,7 +25,7 @@ has Int_0_to_2   $.color           = 0;
 has Int_0_to_2   $.layout          = 1;
 has Int_0_to_2   $.page            = 1; # doc
 has Positive_Int $.default-number;
-has Positive_Int $.keep            = 5; #
+has Positive_Int $.keep            = 5; # doc
 has List $.mark                    = [];
 has List $.tabs-info               = [];  # no doc
 has List $.tabs-prompt             = [];  # no doc
@@ -52,7 +52,7 @@ method !_init_term ( *%opt ) {
     if %opt<hide-cursor> {
         print hide-cursor;
     }
-    my $clear-screen = %opt<clear-screen>;
+    my Int $clear-screen = %opt<clear-screen>;
     if %opt<save-screen> {
         print save-screen;
         $clear-screen = 1;
@@ -83,7 +83,7 @@ method !_end_term ( *%opt ) {
 
 sub choose-directories ( *%opt ) is export( :DEFAULT, :choose-directories ) { Term::Choose::Util.new().choose-directories( |%opt ) }
 
-method choose-directories ( # documentation
+method choose-directories (
         Int_0_or_1   :$clear-screen = $!clear-screen,
         Int_0_or_1   :$hide-cursor  = $!hide-cursor,
         Int_0_or_1   :$mouse        = $!mouse,
@@ -105,24 +105,25 @@ method choose-directories ( # documentation
         Str          :$prompt       = $!prompt,
         List         :$tabs-info    = $!tabs-info,
         List         :$tabs-prompt  = $!tabs-prompt,
+        --> Array[IO::Path]
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
     my $tc = Term::Choose.new( :1loop, :0save-screen, :0hide-cursor, :0clear-screen, :$color, :$footer, :$keep, :$mouse );
-    my @chosen_dirs; #
+    my IO::Path @chosen_dirs; #
     my IO::Path $dir = $init-dir.IO;
     my IO::Path $prev_dir = $dir;
-    my ( $confirm_mode, $change_path, $add_dirs ) = ( '  ' ~ $confirm, '- Change Location', '- Add Directories' );
+    my ( Str $confirm_mode, Str $change_path, Str $add_dirs ) = ( '  ' ~ $confirm, '- Change Location', '- Add Directories' );
     my @bu;
 
     CHOOSE_MODE: loop {
         my Int $term_w = get-term-width();
-        my @tmp_prompt;
+        my Str @tmp_prompt;
         my Str $key_dirs = 'Chosen Dirs: ';
         my Str $dirs_chosen = $key_dirs ~ ( @chosen_dirs ?? join( ', ', @chosen_dirs ) !! '---' );
-        @tmp_prompt.push: line-fold( $dirs_chosen, $term_w, :subseq-tab( ' ' x $key_dirs.chars ), :0join );
+        @tmp_prompt.push: |line-fold( $dirs_chosen, $term_w, :subseq-tab( ' ' x $key_dirs.chars ), :0join );
         my Str $key_path = 'Location: ';
         my Str $path = $key_path ~ $dir;
-        @tmp_prompt.push: line-fold( $path, $term_w, :subseq-tab( ' ' x $key_path.chars ), :0join );
+        @tmp_prompt.push: |line-fold( $path, $term_w, :subseq-tab( ' ' x $key_path.chars ), :0join );
         my Str $mode_prompt = @tmp_prompt.join: "\n";
         # Choose
         my Str $choice = $tc.choose(
@@ -135,7 +136,7 @@ method choose-directories ( # documentation
                 next CHOOSE_MODE;
             }
             self!_end_term( :$hide-cursor, :$save-screen );
-            return;
+            return Array[IO::Path].new();
         }
         elsif $choice eq $confirm_mode {
             self!_end_term( :$hide-cursor, :$save-screen );
@@ -167,28 +168,28 @@ method choose-directories ( # documentation
                 }
             }
             my Str $add_prompt = $path ~ "\n" ~ ( $prompt ?? $prompt !! 'Choose:' );
-            my @tmp_info;
+            my Str @tmp_info;
             if $info.defined && $info.chars {
                 @tmp_info.push: $info;
             }
-            push @tmp_info, line-fold( $dirs_chosen, $term_w, :subseq-tab( ' ' x $key_dirs.chars ), :0join );
+            push @tmp_info, |line-fold( $dirs_chosen, $term_w, :subseq-tab( ' ' x $key_dirs.chars ), :0join );
             my Str $subset_info = @tmp_info.join: "\n";
             # choose_a_subset
-            my $idxs = self.choose-a-subset(
+            my Int @idxs = self.choose-a-subset(
                 @avail_dirs.map({ .basename }).sort,
                 :info( $subset_info ), :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ),
                 :cs-label( 'Add to Dirs: ' ), :$page, :$footer, :$keep, :1index, :0hide-cursor, :0clear-screen
             );
-            if $idxs.defined && $idxs.elems { ##
+            if @idxs.elems {
                 @bu.push: [ $dir, [ |@chosen_dirs ] ];
-                @chosen_dirs.push: |@avail_dirs[|$idxs];
+                @chosen_dirs.push: |@avail_dirs[@idxs];
             }
         }
     }
 }
 
 
-sub choose-a-directory ( *%opt ) is export( :DEFAULT, :choose-a-directory ) { Term::Choose::Util.new().choose-a-directory( |%opt ) } #  --> IO::Path
+sub choose-a-directory ( *%opt ) is export( :DEFAULT, :choose-a-directory ) { Term::Choose::Util.new().choose-a-directory( |%opt ) }
 
 method choose-a-directory (
         Int_0_or_1   :$clear-screen = $!clear-screen,
@@ -212,7 +213,8 @@ method choose-a-directory (
         Str          :$parent-dir   = $!parent-dir,
         List         :$tabs-info    = $!tabs-info,
         List         :$tabs-prompt  = $!tabs-prompt,
-    ) { # --> IO::Path
+        --> IO::Path
+    ) { 
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
     my $tc = Term::Choose.new( :1loop, :0save-screen, :0hide-cursor, :0clear-screen, :$color, :$footer, :$keep, :$mouse );
     my IO::Path $dir = $init-dir.IO;
@@ -225,9 +227,9 @@ method choose-a-directory (
 }
 
 
-sub choose-a-file    ( *%opt ) is export( :DEFAULT, :choose-a-file ) { Term::Choose::Util.new().choose-a-file( |%opt ) } #  --> IO::Path
+sub choose-a-file ( *%opt ) is export( :DEFAULT, :choose-a-file ) { Term::Choose::Util.new().choose-a-file( |%opt ) }
 
-method choose-a-file ( # documentation
+method choose-a-file (
         Int_0_or_1   :$clear-screen = $!clear-screen,
         Int_0_or_1   :$hide-cursor  = $!hide-cursor,
         Int_0_or_1   :$mouse        = $!mouse,
@@ -250,7 +252,8 @@ method choose-a-file ( # documentation
         Str          :$parent-dir   = $!parent-dir,
         List         :$tabs-info    = $!tabs-info,
         List         :$tabs-prompt  = $!tabs-prompt,
-    ) { # --> IO::Path
+        --> IO::Path
+    ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
     my $tc = Term::Choose.new( :1loop, :0save-screen, :0hide-cursor, :0clear-screen, :$color, :$footer, :$keep, :$mouse );
     my IO::Path $dir = $init-dir.IO;
@@ -262,9 +265,9 @@ method choose-a-file ( # documentation
         my IO::Path $chosen_dir = self!_choose_a_path( $tc, $dir, $prompt_fmt, %opt_path );
         if ! $chosen_dir.defined {
             self!_end_term( :$hide-cursor, :$save-screen );
-            return;
+            return IO::Path;
         }
-        my $chosen_file = self!_a_file( $tc, $chosen_dir, %opt_path );
+        my IO::Path $chosen_file = self!_a_file( $tc, $chosen_dir, %opt_path );
         if ! $chosen_file.defined {
             next CHOOSE_DIR;
         }
@@ -274,7 +277,7 @@ method choose-a-file ( # documentation
 }
 
 
-method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt ) { #  --> IO::Path
+method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt --> IO::Path ) {
     my IO::Path $curr_dir = $dir;
     my IO::Path $prev_dir = $dir;
 
@@ -288,7 +291,7 @@ method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt ) { #  --> IO
                 @dirs = $curr_dir.dir.grep({ .d && .basename !~~ / ^ \. / }).sort;
             }
             CATCH {
-                my $prompt = $curr_dir.gist ~ ":\n" ~ $_;
+                my Str $prompt = $curr_dir.gist ~ ":\n" ~ $_;
                 $tc.pause( [ 'Press ENTER to continue.' ], :$prompt );
                 if $curr_dir.Str eq '/' {
                     return;
@@ -298,7 +301,7 @@ method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt ) { #  --> IO
             }
         }
         my Str $parent_dir = %opt<parent-dir>;
-        my $confirm = %opt<confirm>;
+        my Str $confirm = %opt<confirm>;
         my @pre = ( Int, $confirm, $parent_dir );
         my Str $prompt = sprintf $prompt_fmt, $prev_dir;
         my @choices = |@pre, |@dirs.map( { .basename } );
@@ -310,7 +313,7 @@ method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt ) { #  --> IO
             :undef( %opt<back> )
         );
         if ! $idx.defined || ! @choices[$idx].defined {
-            return; # IO::Path;
+            return IO::Path;
         }
         elsif @choices[$idx] eq %opt<confirm> {
             return $prev_dir;
@@ -326,7 +329,7 @@ method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt ) { #  --> IO
 }
 
 
-method !_a_file ( $tc, IO::Path $dir, %opt ) { #  --> IO::Path
+method !_a_file ( $tc, IO::Path $dir, %opt --> IO::Path ) {
     my Str $prev_dir;
     my Str $chosen_file;
 
@@ -334,7 +337,7 @@ method !_a_file ( $tc, IO::Path $dir, %opt ) { #  --> IO::Path
         my Str @files;
         try {
             if %opt<filter> {
-                my $regex = %opt<filter>;
+                my Str $regex = %opt<filter>;
                 @files = $dir.dir( :test( / <$regex> / ) ).grep( { .f } ).map: { .basename };
             }
             else {
@@ -344,7 +347,7 @@ method !_a_file ( $tc, IO::Path $dir, %opt ) { #  --> IO::Path
                 @files = @files.grep: { ! / ^ \. / };
             }
             CATCH { #
-                my $prompt = $dir.gist ~ ":\n" ~ $_;
+                my Str $prompt = $dir.gist ~ ":\n" ~ $_;
                 $tc.pause( [ 'Press ENTER to continue.' ], :$prompt );
                 return;
             }
@@ -378,7 +381,7 @@ method !_a_file ( $tc, IO::Path $dir, %opt ) { #  --> IO::Path
                 $prev_dir = Str;
                 next;
             }
-            return;
+            return IO::Path;
         }
         elsif $chosen_file eq %opt<confirm> {
             return if ! $prev_dir.defined; # chars
@@ -415,6 +418,7 @@ method choose-a-number ( Int $digits = 7,
         Str          :$reset               = $!reset,
         List         :$tabs-info           = $!tabs-info,
         List         :$tabs-prompt         = $!tabs-prompt,
+        --> Int
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
     my $tc = Term::Choose.new( :1loop, :0save-screen, :0hide-cursor, :0clear-screen, :$color, :$footer, :$keep, :$mouse );
@@ -468,18 +472,18 @@ method choose-a-number ( Int $digits = 7,
                 $cs_row = $result;
             }
         }
-        my @tmp;
+        my Str @tmp_prompt;
         if $cs_row.defined {
-            @tmp.push: $cs_row;
+            @tmp_prompt.push: $cs_row;
         }
         if $prompt.defined && $prompt.chars {
-            @tmp.push: $prompt;
+            @tmp_prompt.push: $prompt;
         }
         my @pre = ( Str, $confirm_tmp );
         # Choose
         my Str $range = $tc.choose(
             [ |@pre, |( $small-first ?? @ranges.reverse !! @ranges ) ],
-            :prompt( @tmp.join: "\n" ), :$info, :2layout, :1alignment, :undef( $back_tmp ), :$tabs-prompt, :$tabs-info
+            :prompt( @tmp_prompt.join: "\n" ), :$info, :2layout, :1alignment, :undef( $back_tmp ), :$tabs-prompt, :$tabs-info
         );
         if ! $range.defined {
             if $result.chars {
@@ -489,13 +493,13 @@ method choose-a-number ( Int $digits = 7,
             }
             else {
                 self!_end_term( :$hide-cursor, :$save-screen );
-                return;
+                return Int;
             }
         }
         elsif $range eq $confirm_tmp {
             self!_end_term( :$hide-cursor, :$save-screen );
             if ! $result.chars {
-                return;
+                return Int;
             }
             $result.=subst( / $thousands-separator /, '', :g ) if $thousands-separator ne '';
             return $result.Int;
@@ -514,7 +518,7 @@ method choose-a-number ( Int $digits = 7,
         # Choose
         my Str $num = $tc.choose(
             [ |@pre, |@choices, $reset ],
-            :prompt( @tmp.join: "\n" ), :$info, :1layout, :2alignment, :0order, :undef( $back_short ), :$tabs-prompt,
+            :prompt( @tmp_prompt.join: "\n" ), :$info, :1layout, :2alignment, :0order, :undef( $back_short ), :$tabs-prompt,
             :$tabs-info
         );
         if ! $num.defined {
@@ -566,18 +570,19 @@ method choose-a-subset ( @list,
         Str        :$back           = $!back,
         Str        :$confirm        = $!confirm,
         Str        :$footer         = $!footer,
+        --> Array
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
     my $tc = Term::Choose.new( :1loop, :0save-screen, :0hide-cursor, :0clear-screen, :$color, :$footer, :$keep, :$mouse );
-    my Array $new_idx = [];
+    my Array[Int] $new_idx = Array[Int].new(); # $new_idx is now defined
     my Array $new_val = [ @list ];
     my @pre = ( Int, $confirm );
-    my Array $initially_marked = [ |$mark.map: { $_ + @pre.elems } ];
+    my @initially_marked = $mark.map: { $_ + @pre.elems };
     my @bu;
 
     loop {
-        my @tmp;
-        my $cs;
+        my Str @tmp_prompt;
+        my Str $cs;
         if $cs-label.defined {
             $cs ~= $cs-label;
         }
@@ -588,38 +593,38 @@ method choose-a-subset ( @list,
             $cs ~= $cs-begin ~ '*' ~ $cs-end;
         }
         if $cs.defined {
-            @tmp.push: $cs;
+            @tmp_prompt.push: $cs;
         }
         if ($prompt//'').chars {
-            @tmp.push: $prompt;
+            @tmp_prompt.push: $prompt;
         }
         my @choices = |@pre, |$new_val.map: { $prefix ~ $_.gist };
         # Choose
-        my Array[Int] $idx = $tc.choose-multi(
+        my Int @idx = $tc.choose-multi(
             @choices,
-            :prompt( @tmp.join: "\n" ), :$info, :meta-items( |^@pre ), :undef( $back ),
+            :prompt( @tmp_prompt.join: "\n" ), :$info, :meta-items( |^@pre ), :undef( $back ),
             :lf( 0, ( $cs-label // '' ).chars ), :$alignment, :1index, :$layout, :$order,
-            :mark( $initially_marked ), :2include-highlighted, :$tabs-prompt, :$tabs-info
+            :mark( @initially_marked ), :2include-highlighted, :$tabs-prompt, :$tabs-info
         );
-        if $initially_marked.defined {
-            $initially_marked = Array;
+        if @initially_marked.elems {
+            @initially_marked = ();
         }
-        if ! $idx[0].defined || $idx[0] == 0 {
-            if @bu {
+        if ! @idx[0].defined || @idx[0] == 0 {
+            if @bu.elems {
                 ( $new_val, $new_idx ) = @bu.pop;
                 next;
             }
             self!_end_term( :$hide-cursor, :$save-screen );
-            return;
+            return $index ?? Array[Int].new() !! Array.new();
         }
-        @bu.push( [ [ |$new_val ], [ |$new_idx ] ] );
+        @bu.push( [ [ |$new_val ], Array[Int].new( |$new_idx ) ] );
         my $ok;
-        if $idx[0] == @pre.first( $confirm, :k ) {
+        if @idx[0] == @pre.first( $confirm, :k ) {
             $ok = True;
-            $idx.shift;
+            @idx.shift;
         }
         my Int @tmp_idx;
-        for $idx.reverse {
+        for @idx.reverse {
             my $i = $_ - @pre;
             if ! $keep-chosen {
                 $new_val.splice( $i, 1 );
@@ -636,7 +641,7 @@ method choose-a-subset ( @list,
                 $new_idx = [ 0 .. @list.end ];
             }
             self!_end_term( :$hide-cursor, :$save-screen );
-            return $index ?? $new_idx !! [ @list[|$new_idx] ];
+            return $index ?? @$new_idx !! Array.new( @list[|$new_idx] );
         }
     }
 }
@@ -669,8 +674,8 @@ method settings-menu ( @menu, %setup,
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
     my $tc = Term::Choose.new( :1loop, :0save-screen, :0hide-cursor, :0clear-screen, :$color, :$footer, :$keep, :$mouse );
     my Int $longest = 0;
-    my %name_w;
-    my %new_setup;
+    my Int %name_w;
+    my Int %new_setup;
     for @menu -> ( Str $key, Str $name, $ ) {
         %name_w{$key} = print-columns-ext( $name, $color );
         $longest max= %name_w{$key};
@@ -687,18 +692,18 @@ method settings-menu ( @menu, %setup,
     my Int $count = 0;
 
     loop {
-        my $cs;
+        my Str $cs;
         if $cs-label.defined {
             $cs = $cs-label ~ $cs-begin ~ %new_setup.keys.map({ "$_=%new_setup{$_}" }).join( $cs-separator ) ~ $cs-end;
         }
-        my @tmp;
+        my Str @tmp_prompt;
         if $cs.defined {
-            @tmp.push: $cs;
+            @tmp_prompt.push: $cs;
         }
         if $prompt.defined && $prompt.chars {
-            @tmp.push: $prompt;
+            @tmp_prompt.push: $prompt;
         }
-        my $comb_prompt = @tmp.join: "\n";
+        my Str $comb_prompt = @tmp_prompt.join: "\n";
         my @pre = Int, $confirm;
         # Choose
         my Int $idx = $tc.choose(
@@ -1188,7 +1193,7 @@ help.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2020 Matthäus Kiem.
+Copyright 2016-2021 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
