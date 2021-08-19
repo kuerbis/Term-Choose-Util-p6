@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.3.7>;
+unit class Term::Choose::Util:ver<1.3.8>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -206,7 +206,7 @@ method choose-a-directory (
         Str          :$init-dir     = $!init-dir,
         Str          :$info         = $!info,
         Str          :$prompt       = $!prompt,
-        Str          :$cs-label     = $!cs-label // 'Dir: ',
+        Str          :$cs-label     = $!cs-label // 'Directory: ',
         Str          :$footer       = $!footer,
         Str          :$back         = $!back,
         Str          :$confirm      = $!confirm,
@@ -220,7 +220,7 @@ method choose-a-directory (
     my IO::Path $dir = $init-dir.IO;
     my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$tabs-info, :$tabs-prompt, :$info,
                    :$prompt, :$cs-label, :$back, :$confirm, :$parent-dir, :$back, :$confirm;
-    my Str $prompt_fmt = $cs-label ~ "%s\n" ~ ( $prompt.defined && $prompt.chars ?? $prompt !! 'Choose a directory:' );
+    my Str $prompt_fmt = $cs-label ~ "%s\n" ~ ( $prompt.defined && $prompt.chars ?? $prompt !! 'Choose:' );
     my IO::Path $chosen_dir = self!_choose_a_path( $tc, $dir, $prompt_fmt, %opt_path );
     self!_end_term( :$hide-cursor, :$save-screen );
     return $chosen_dir
@@ -261,7 +261,7 @@ method choose-a-file (
                    :$cs-label, :back( '<<' ), :confirm<OK>, :$parent-dir, :$back, :$confirm;
 
     CHOOSE_DIR: loop {
-        my Str $prompt_fmt = "File-Directory: %s\n" ~ ( $prompt.defined && $prompt.chars ?? $prompt !! 'Choose File-Directory:' );
+        my Str $prompt_fmt = "File-Directory: %s\n" ~ ( $prompt.defined && $prompt.chars ?? $prompt !! 'Choose:' );
         my IO::Path $chosen_dir = self!_choose_a_path( $tc, $dir, $prompt_fmt, %opt_path );
         if ! $chosen_dir.defined {
             self!_end_term( :$hide-cursor, :$save-screen );
@@ -899,7 +899,7 @@ Default: C<CONFIRM>.
 
 =begin code
 
-    my $chosen-directory = choose-a-directory( :layout( 1 ), ... )
+    my $chosen-directory = choose-a-directory( :1layout, ... )
 
 =end code
 

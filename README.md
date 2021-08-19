@@ -85,7 +85,7 @@ Default: `CONFIRM`.
 choose-a-directory
 ------------------
 
-        my $chosen-directory = choose-a-directory( :layout( 1 ), ... )
+        my $chosen-directory = choose-a-directory( :1layout, ... )
 
 With `choose-a-directory` the user can browse through the directory tree and choose a directory which is returned.
 
