@@ -24,6 +24,12 @@ Values in brackets are default values.
 
 ### Options available for all subroutines
 
+  * back
+
+Customize the string of the menu entry "back".
+
+Default: `BACK`
+
   * clear-screen
 
 If enabled, the screen is cleared before the output.
@@ -38,6 +44,20 @@ Setting color to 1 enables the support for color and text formatting escape sequ
 
 Values: [0],1,2.
 
+  * confirm
+
+Customize the string of the menu entry "confirm".
+
+Default: `CONFIRM`.
+
+  * cs-label
+
+The value of *cs-label* (current selection label) is a string which is placed in front of the current selection.
+
+Defaults: `choose-directories`: 'Chosen Dirs: ', `choose-a-directory`: 'Directory: ', `choose-a-file`: 'File: '. For `choose-a-number`, `choose-a-subset` and `settings-menu` the default is undefined.
+
+The current-selection output is placed between the info string and the prompt string.
+
   * hide-cursor
 
 Hide the cursor
@@ -50,19 +70,33 @@ A string placed on top of of the output.
 
 Default: undef
 
+  * margin
+
+The option *margin* allows one to set a margin on all four sides.
+
+*margin* expects a reference to an array with four elements in the following order:
+
+- top margin (number of terminal lines)
+
+- right margin (number of terminal columns)
+
+- botton margin (number of terminal lines)
+
+- left margin (number of terminal columns)
+
+*margin* does not affect the *info* string. To add margins to the *info* string see *tabs-info*.
+
+*margin* changes the default values of *tabs-prompt*.
+
+Allowed values: 0 or greater. Elements beyond the fourth are ignored.
+
+Default: undef
+
   * mouse
 
 Enable the mouse mode. An item can be chosen with the left mouse key, the right mouse key can be used instead of the SpaceBar key.
 
 Values: [0],1.
-
-  * cs-label
-
-The value of *cs-label* (current selection label) is a string which is placed in front of the current selection.
-
-Defaults: `choose-directories`: 'Dirs: ', `choose-a-directory`: 'Dir: ', `choose-a-file`: 'File: '. For `choose-a-number`, `choose-a-subset` and `settings-menu` the default is undefined.
-
-The current selection output is placed between the info string and the prompt string.
 
   * prompt
 
@@ -70,17 +104,43 @@ A string placed on top of the available choices.
 
 Default: undef
 
-  * back
+  * save-screen
 
-Customize the string of the menu entry "back".
+0 - off (default)
 
-Default: `BACK`
+1 - use the alternate screen
 
-  * confirm
+  * tabs-info
 
-Customize the string of the menu entry "confirm".
+The option *tabs-info* allows one to insert spaces at the beginning and the end of *info* lines.
 
-Default: `CONFIRM`.
+*tabs-info* expects a reference to an array with one to three elements:
+
+- the first element (initial tab) sets the number of spaces inserted at beginning of paragraphs
+
+- the second element (subsequent tab) sets the number of spaces inserted at the beginning of all broken lines apart from the beginning of paragraphs
+
+- the third element sets the number of spaces used as a right margin.
+
+Allowed values: 0 or greater. Elements beyond the third are ignored.
+
+Default: undef
+
+  * tabs-prompt
+
+The option *tabs-prompt* allows one to insert spaces at the beginning and the end of the current-selection and *prompt* lines.
+
+*tabs-prompt* expects a reference to an array with one to three elements:
+
+- the first element (initial tab) sets the number of spaces inserted at beginning of paragraphs
+
+- the second element (subsequent tab) sets the number of spaces inserted at the beginning of all broken lines apart from the beginning of paragraphs
+
+- the third element sets the number of spaces used as a right margin.
+
+Allowed values: 0 or greater. Elements beyond the third are ignored.
+
+default: If *margin* is defined, `initial tab` and `subsequent tab` are set to `left-margin` and the right margin is set to `right-margin`. `choose-directories` and `choose-a-subset`: `+2` for the `subsequent tab`. Else the default of *tabs-prompt* is undefined.
 
 choose-a-directory
 ------------------
@@ -353,7 +413,7 @@ Thanks to the people from [Perl-Community.de](http://www.perl-community.de), fro
 LICENSE AND COPYRIGHT
 =====================
 
-Copyright 2016-2021 Matthäus Kiem.
+Copyright 2016-2022 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
