@@ -4,7 +4,9 @@ Revision history for Term::Choose::Util
 1.3.9   2022-06-01
         - New options 'margin', 'tabs-info' and 'tabs-prompt'.
         - 'clear-screen' and 'save-screen' are now by default disabled.
+        - New default for option 'prompt'.
         - Bugfix file filter.
+        - Bugfix save-screen.
         - Update year copyright.
         - Update documentation.
 

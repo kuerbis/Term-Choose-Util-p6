@@ -134,8 +134,7 @@ method choose-directories (
     my @bu;
 
     CHOOSE_MODE: loop {
-        my Str $key_dirs = $cs-label;
-        my Str $dirs_chosen = $key_dirs ~ ( @chosen_dirs ?? join( ', ', @chosen_dirs ) !! '---' );
+        my Str $dirs_chosen = $cs-label ~ ( @chosen_dirs ?? join( ', ', @chosen_dirs ) !! '---' );
         my Str $key_path = 'Location: ';
         my Str $path = $key_path ~ $dir;
         my Str $mode_prompt = $dirs_chosen ~ "\n" ~ $path;
@@ -194,7 +193,7 @@ method choose-directories (
                 @avail_dirs.map({ .basename }).sort,
                 :$info, :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ),
                 :cs-label( @tmp_cs_label.join: "\n" ), :$page, :$footer, :$keep, :1index, :0hide-cursor,
-                :0clear-screen, :$margin, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+                :0clear-screen, :0save-screen, :$margin, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
             );
             if @idxs.elems {
                 @bu.push: [ $dir, [ |@chosen_dirs ] ];
