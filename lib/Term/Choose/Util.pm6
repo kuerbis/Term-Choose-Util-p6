@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.3.9>;
+unit class Term::Choose::Util:ver<1.4.0>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -110,6 +110,7 @@ method choose-directories (
         --> Array[IO::Path]
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
+    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt;
     if $tabs-prompt {
         $local_tabs_prompt = $tabs-prompt;
@@ -124,8 +125,8 @@ method choose-directories (
         }
     }
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin,
-        :$mouse, :$page :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my IO::Path @chosen_dirs; #
     my IO::Path $dir = $init-dir.IO;
@@ -192,8 +193,8 @@ method choose-directories (
             my Int @idxs = self.choose-a-subset(
                 @avail_dirs.map({ .basename }).sort,
                 :$info, :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ),
-                :cs-label( @tmp_cs_label.join: "\n" ), :$page, :$footer, :$keep, :1index, :0hide-cursor,
-                :0clear-screen, :0save-screen, :$margin, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+                :cs-label( @tmp_cs_label.join: "\n" ), :$page, :$footer, :$keep, :1index, :0hide-cursor, :0clear-screen,
+                :0save-screen, :$margin, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
             );
             if @idxs.elems {
                 @bu.push: [ $dir, [ |@chosen_dirs ] ];
@@ -232,10 +233,11 @@ method choose-a-directory (
         --> IO::Path
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
+    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin,
-        :$mouse, :$page :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my IO::Path $dir = $init-dir.IO;
     my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$info, :$prompt, :$back, :$confirm, :$parent-dir,
@@ -279,10 +281,11 @@ method choose-a-file (
         --> IO::Path
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
+    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin,
-        :$mouse, :$page :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my IO::Path $dir = $init-dir.IO;
     my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$info, :$prompt, :$cs-label, :back( '<<' ),
@@ -455,10 +458,11 @@ method choose-a-number ( Int $digits = 7,
         --> Int
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
+    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin,
-        :$mouse, :$page :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my Int $sep_w = print-columns-ext( $thousands-separator, $color );
     my Int $longest = $digits + ( ( $digits - 1 ) div 3 ) * $sep_w;
@@ -611,6 +615,7 @@ method choose-a-subset ( @list,
         --> Array
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
+    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt;
     if $tabs-prompt {
         $local_tabs_prompt = $tabs-prompt;
@@ -625,8 +630,8 @@ method choose-a-subset ( @list,
         }
     }
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin,
-        :$mouse, :$page :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my Array[Int] $new_idx = Array[Int].new(); # $new_idx is now defined
     my Array $new_val = [ @list ];
@@ -726,10 +731,11 @@ method settings-menu ( @menu, %setup,
         List       :$tabs-prompt  = $!tabs-prompt,
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
+    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin,
-        :$mouse, :$page :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my Int $longest = 0;
     my Int %name_w;
@@ -994,7 +1000,8 @@ the beginning of paragraphs
 
 Allowed values: 0 or greater. Elements beyond the third are ignored.
 
-Default: undef
+default: If I<margin> is defined, initial-tab and subsequent-tab are set to left-I<margin> and the right margin is
+set to right-I<margin>. If I<margin> is not defined the default is undefined.
 
 =item1 tabs-prompt
 
@@ -1012,9 +1019,9 @@ the beginning of paragraphs
 
 Allowed values: 0 or greater. Elements beyond the third are ignored.
 
-default: If I<margin> is defined, C<initial tab> and C<subsequent tab> are set to C<left-margin> and the right margin is
-set to C<right-margin>. C<choose-directories> and C<choose-a-subset>: C<+2> for the C<subsequent tab>. Else the default
-of I<tabs-prompt> is undefined.
+default: If I<margin> is defined, initial-tab and subsequent-tab are set to left-I<margin> and the right margin is
+set to right-I<margin>. C<choose-directories> and C<choose-a-subset>: +2 for the subsequent-tab. Else the default is
+undefined.
 
 =head2 choose-a-directory
 
@@ -1062,17 +1069,17 @@ This option has no meaning if I<layout> is set to 2.
 
 Values: 0,[1].
 
-=item1 show-hidden
-
-If enabled, hidden directories are added to the available directories.
-
-Values: 0,[1].
-
 =item1 parent-dir
 
 Customize the string of the menu entry "parent-dir".
 
 Default: C<..>
+
+=item1 show-hidden
+
+If enabled, hidden directories are added to the available directories.
+
+Values: 0,[1].
 
 =item1 L<#Options available for all subroutines>
 
