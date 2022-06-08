@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.0>;
+unit class Term::Choose::Util:ver<1.4.1>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -26,10 +26,10 @@ has Int_0_to_2   $.layout          = 1;
 has Int_0_to_2   $.page            = 1; # no doc
 has Positive_Int $.default-number;
 has Positive_Int $.keep            = 5; # no doc
-has List $.margin                  = [];
+has List $.margin;
 has List $.mark                    = [];
-has List $.tabs-info               = [];
-has List $.tabs-prompt             = [];
+has List $.tabs-info;              # undef
+has List $.tabs-prompt;            # undef
 has Str $.back                     = 'BACK';
 has Str $.confirm                  = 'CONFIRM';
 has Str $.cs-begin                 = '';
@@ -106,13 +106,13 @@ method choose-directories (
         Str          :$prompt       = $!prompt,
         List         :$margin       = $!margin,
         List         :$tabs-info    = $!tabs-info,
-        List         :$tabs-prompt = $!tabs-prompt,
+        List         :$tabs-prompt  = $!tabs-prompt,
         --> Array[IO::Path]
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
+    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt;
-    if $tabs-prompt {
+    if $tabs-prompt.defined {
         $local_tabs_prompt = $tabs-prompt;
     }
     else {
@@ -233,8 +233,8 @@ method choose-a-directory (
         --> IO::Path
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
+    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
+    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
         :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
         :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
@@ -281,8 +281,8 @@ method choose-a-file (
         --> IO::Path
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
+    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
+    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
         :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
         :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
@@ -458,8 +458,8 @@ method choose-a-number ( Int $digits = 7,
         --> Int
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
+    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
+    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
         :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
         :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
@@ -615,9 +615,9 @@ method choose-a-subset ( @list,
         --> Array
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
+    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt;
-    if $tabs-prompt {
+    if $tabs-prompt.defined {
         $local_tabs_prompt = $tabs-prompt;
     }
     else {
@@ -731,8 +731,8 @@ method settings-menu ( @menu, %setup,
         List       :$tabs-prompt  = $!tabs-prompt,
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt ?? $margin[3,3,1] !! $tabs-prompt;
+    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
+    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
         :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
         :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
@@ -1000,8 +1000,8 @@ the beginning of paragraphs
 
 Allowed values: 0 or greater. Elements beyond the third are ignored.
 
-default: If I<margin> is defined, initial-tab and subsequent-tab are set to left-I<margin> and the right margin is
-set to right-I<margin>. If I<margin> is not defined the default is undefined.
+default: If I<margin> is set, the initial-tab and the subsequent-tab are set to left-I<margin> and the right margin is
+set to right-I<margin>. If I<margin> is not defined, the default is undefined.
 
 =item1 tabs-prompt
 
@@ -1019,7 +1019,7 @@ the beginning of paragraphs
 
 Allowed values: 0 or greater. Elements beyond the third are ignored.
 
-default: If I<margin> is defined, initial-tab and subsequent-tab are set to left-I<margin> and the right margin is
+default: If I<margin> is set, the initial-tab and the subsequent-tab are set to left-I<margin> and the right margin is
 set to right-I<margin>. C<choose-directories> and C<choose-a-subset>: +2 for the subsequent-tab. Else the default is
 undefined.
 
