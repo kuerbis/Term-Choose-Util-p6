@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.1>;
+unit class Term::Choose::Util:ver<1.4.2>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -832,13 +832,34 @@ sub insert-sep ( $num, $thousands-separator = ' ' ) is export( :insert-sep ) {
     return $new;
 }
 
-sub unicode-sprintf ( Str $str, Int $avail_col_w, @cache?, :$alignment = 0, :$add_dots = 0, :$color = 0 ) is export( :unicode-sprintf ) {
+sub unicode-sprintf (
+        Str         $str,
+        Int         $avail_col_w,
+        Int         %cache?,
+        Int_0_to_2 :$alignment = 0,
+        Int_0_or_1 :$add_dots = 0,
+        Int_0_to_2 :$color = 0
+        ) is export( :unicode-sprintf )
+    {
     my Int $str_length = print-columns-ext( $str, $color );
     if $str_length > $avail_col_w {
-        if $add_dots {
-           return to-printwidth( $str, $avail_col_w - 3 ) ~ '...';
+        if $color {
+            my Str @colors;
+            my $string = $str;
+            $string.=subst( / \x[feff] /, '', :g );
+            $string.=subst( / ( \e \[ <[\d;]>* m ) /, { @colors.push( $0.Str ) && "\x[feff]" }, :g );
+            $string = to-printwidth( $string, $avail_col_w, $add_dots, %cache ).[0];
+            if @colors.elems {
+                $string.=subst( / \x[feff] /, { @colors.shift }, :g );
+                if @colors.elems {
+                    $string ~= @colors[*-1];
+                }
+            }
+            return $string;
         }
-        return to-printwidth( $str, $avail_col_w, False, @cache ).[0];
+        else {
+            return to-printwidth( $str, $avail_col_w, $add_dots, %cache ).[0]; # ### 
+        }
     }
     elsif $str_length < $avail_col_w {
         if $alignment == 0 {

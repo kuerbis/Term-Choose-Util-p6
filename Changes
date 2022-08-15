@@ -1,6 +1,10 @@
 Revision history for Term::Choose::Util
 
 
+1.4.2   2022-08-15
+        - Char width cache: from array to hash.
+        - Update unicode-sprintf.
+
 1.4.1   2022-06-08
         - Update 'tabs-info' and 'tabs-prompt'.
 
