@@ -1,6 +1,9 @@
 Revision history for Term::Choose::Util
 
 
+1.4.3   2023-05-14
+        - META6: replace 'authors' with 'auth'.
+
 1.4.2   2022-08-15
         - Char width cache: from array to hash.
         - Update unicode-sprintf.

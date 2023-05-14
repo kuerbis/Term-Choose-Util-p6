@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.2>;
+unit class Term::Choose::Util:ver<1.4.3>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -1342,7 +1342,7 @@ help.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2022 Matthäus Kiem.
+Copyright 2016-2023 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
