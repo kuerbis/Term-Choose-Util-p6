@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/kuerbis/Term-Choose-Util-p6.svg?branch=master)](https://travis-ci.org/kuerbis/Term-Choose-Util-p6)
-
 NAME
 ====
 
@@ -354,21 +352,21 @@ settings-menu
 
         settings-menu( @menu, %config, :1mouse, ... );
 
-The first argument is a list of lists. Each of the lists have three elements:
+The first argument is a list of lists. Each of the lists has three elements:
 
-    the option name
+  * The option name
 
-    the prompt string
+  * The prompt string
 
-    a list of the available values for the option
+  * A list of the available values for the option
 
 The second argument is a hash:
 
-    the hash key is the option name
+  * The hash keys are the option names
 
-    the hash value (zero based index) sets the current value for the option.
+  * The values are the indexes of the current value of the respective key/option. If an index is undefined or out of bonds, it is set to 0.
 
-This hash is edited in place: the changes made by the user are saved in this hash.
+This hash is edited in place; the changes made by the user are saved in this hash.
 
 Options:
 
@@ -413,7 +411,7 @@ Thanks to the people from [Perl-Community.de](http://www.perl-community.de), fro
 LICENSE AND COPYRIGHT
 =====================
 
-Copyright 2016-2023 Matthäus Kiem.
+Copyright 2016-2024 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

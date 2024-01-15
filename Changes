@@ -1,6 +1,10 @@
 Revision history for Term::Choose::Util
 
 
+1.4.4   2024-01-15
+        - 'settings_menu': set undefined and out of bonds indexes to 0.
+        - Added github actions workflow test.
+
 1.4.3   2023-05-14
         - META6: replace 'authors' with 'auth'.
 

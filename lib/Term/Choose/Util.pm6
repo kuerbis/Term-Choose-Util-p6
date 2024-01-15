@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.3>;
+unit class Term::Choose::Util:ver<1.4.4>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -740,15 +740,27 @@ method settings-menu ( @menu, %setup,
     my Int $longest = 0;
     my Int %name_w;
     my Int %new_setup;
-    for @menu -> ( Str $key, Str $name, $ ) {
+
+    for @menu -> ( Str $key, Str $name, @values ) {
         %name_w{$key} = print-columns-ext( $name, $color );
         $longest max= %name_w{$key};
-        %setup{$key} //= 0;
+        %setup{$key} = 0 if ! %setup{$key}.defined;
+        %setup{$key} = 0 if %setup{$key} > @values.end;
+        %setup{$key} = 0 if ! @values[%setup{$key}].defined;
+
+        while ! @values[%setup{$key}].defined {
+            ++%setup{$key};
+            if %setup{$key} > @values.end {
+                %setup{$key} = 0;
+                last;
+            }
+        }
         %new_setup{$key} = %setup{$key};
     }
     my Str @print_keys;
+
     for @menu -> ( Str $key, Str $name, @values ) {
-        my $current = @values[%new_setup{$key}];
+        my $current = @values[%new_setup{$key}] // '';
         @print_keys.push: $name ~ ( ' '  x ( $longest - %name_w{$key} ) ) ~ " [$current]";
     }
     %*ENV<TC_RESET_AUTO_UP> = 0;
@@ -805,13 +817,26 @@ method settings-menu ( @menu, %setup,
             $count = 0;
             $default = $idx;
         }
-        ++$count;
         my \key = @menu[i][0];
-        ++%new_setup{key};
-        if %new_setup{key} > @menu[i][2].end {
-            %new_setup{key} = 0;
+        my $curr_value = @menu[i][2][%new_setup{key}] // '';
+        my $new_value;
+
+        loop {
+            ++$count;
+            ++%new_setup{key};
+            if %new_setup{key} > @menu[i][2].end {
+                %new_setup{key} = 0;
+            }
+            $new_value = @menu[i][2][%new_setup{key}];
+            if $new_value.defined {
+                last;
+            }
+            if $count == @menu[i][2].elems {
+                $new_value = '';
+                last;
+            }
         }
-        @print_keys[i] ~~ s/ '[' <-[\[\]]>+ ']' $ /[@menu[i][2][%new_setup{key}]]/;
+        @print_keys[i] ~~ s/ '[' $curr_value ']' $ /[$new_value]/;
     }
 }
 
@@ -1280,21 +1305,22 @@ C<choose-a-subset> to return nothing.
 
 =end code
 
-The first argument is a list of lists. Each of the lists have three elements:
+The first argument is a list of lists. Each of the lists has three elements:
 
-    the option name
+=item1 The option name
 
-    the prompt string
+=item1 The prompt string
 
-    a list of the available values for the option
+=item1 A list of the available values for the option
 
 The second argument is a hash:
 
-    the hash key is the option name
+=item1 The hash keys are the option names
 
-    the hash value (zero based index) sets the current value for the option.
+=item1 The values are the indexes of the current value of the respective key/option. If an index is undefined or out of
+bonds, it is set to 0.
 
-This hash is edited in place: the changes made by the user are saved in this hash.
+This hash is edited in place; the changes made by the user are saved in this hash.
 
 Options:
 
@@ -1342,7 +1368,7 @@ help.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2023 Matthäus Kiem.
+Copyright 2016-2024 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
