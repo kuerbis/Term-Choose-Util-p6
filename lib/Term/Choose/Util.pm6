@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.4>;
+unit class Term::Choose::Util:ver<1.4.5>;
 
 use Term::Choose;
 use Term::Choose::LineFold;
@@ -131,7 +131,7 @@ method choose-directories (
     my IO::Path @chosen_dirs; #
     my IO::Path $dir = $init-dir.IO;
     my IO::Path $prev_dir = $dir;
-    my ( Str $confirm_mode, Str $change_path, Str $add_dirs ) = ( '  ' ~ $confirm, '- Change Location', '- Add Directories' );
+    my ( Str $confirm_mode, Str $change_path, Str $add_dirs ) = ( $confirm, '- Change Location', '- Add Directories' );
     my @bu;
 
     CHOOSE_MODE: loop {
@@ -142,7 +142,7 @@ method choose-directories (
         # Choose
         my Str $choice = $tc.choose(
             [ Str, $confirm_mode, $change_path, $add_dirs ],
-            :$info, :prompt( $mode_prompt ), :2layout, :undef( '  ' ~ $back )
+            :$info, :prompt( $mode_prompt ), :2layout, :undef( $back )
         );
         if ! $choice.defined {
             if @bu.elems {
@@ -188,11 +188,11 @@ method choose-directories (
             my Str @tmp_cs_label;
             @tmp_cs_label.push: $dirs_chosen;
             @tmp_cs_label.push: $path;
-            @tmp_cs_label.push: 'Dirs to add: ';
+            @tmp_cs_label.push: 'Add: ';
             # choose_a_subset
             my Int @idxs = self.choose-a-subset(
                 @avail_dirs.map({ .basename }).sort,
-                :$info, :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ),
+                :$info, :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ), :1keep-chosen,
                 :cs-label( @tmp_cs_label.join: "\n" ), :$page, :$footer, :$keep, :1index, :0hide-cursor, :0clear-screen,
                 :0save-screen, :$margin, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
             );
@@ -1023,7 +1023,9 @@ Values: [0],1.
 
 A string placed on top of the available choices.
 
-Default: undef
+If the I<prompt> is set to the empty string, no prompt line is displayed.
+
+Default: 'Your choice: '
 
 =item1 save-screen
 

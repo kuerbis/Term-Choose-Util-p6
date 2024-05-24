@@ -1,6 +1,11 @@
 Revision history for Term::Choose::Util
 
 
+1.4.5   2024-05-24
+        - 'choose_directories': keep chosen directories in the list of available directories.
+        - 'choose_directories': don't prefix back and confirm with spaces.
+        - Update documentation.
+
 1.4.4   2024-01-15
         - 'settings_menu': set undefined and out of bonds indexes to 0.
         - Added github actions workflow test.

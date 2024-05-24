@@ -100,7 +100,9 @@ Values: [0],1.
 
 A string placed on top of the available choices.
 
-Default: undef
+If the *prompt* is set to the empty string, no prompt line is displayed.
+
+Default: 'Your choice: '
 
   * save-screen
 
