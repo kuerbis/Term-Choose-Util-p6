@@ -216,6 +216,14 @@ Only files matching this pattern will be displayed.
 
 The regex pattern is used as the value of `dir`s `:test` parameter.
 
+  * prompt2
+
+While *prompt* is used in the directory menu, *prompt2* is the prompt in the menu where you select the file.
+
+If *prompt2* is set to the empty string, no prompt line is displayed.
+
+Default: value of *prompt*
+
 choose-directories
 ------------------
 
@@ -223,7 +231,15 @@ choose-directories
 
 `choose-directories` is similar to `choose-a-directory` but it is possible to return multiple directories.
 
-Options as in [choose-a-directory](#choose-a-directory).
+Options as in [choose-a-directory](#choose-a-directory) plus
+
+  * prompt2
+
+While *prompt* is used in the "Change Location" menu, *prompt2* is the prompt in the menu where you select the directories.
+
+If *prompt2* is set to the empty string, no prompt line is displayed.
+
+Default: value of *prompt*
 
 choose-a-number
 ---------------
@@ -399,6 +415,11 @@ When `settings-menu` is called, it displays for each list entry a row with the p
 It is possible to scroll through the rows. If a row is selected, the set and displayed value changes to the next.After scrolling through the list once the cursor jumps back to the top row.
 
 If the "back" menu entry is chosen, `settings-menu` does not apply the made changes and returns nothing. If the "confirm" menu entry is chosen, `settings-menu` applies the made changes in place to the passed configuration hash (second argument) and returns the number of made changes.
+
+REQUIREMENTS
+============
+
+Same requirements as [Term::Choose](Term::Choose).
 
 AUTHOR
 ======

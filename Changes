@@ -1,13 +1,17 @@
 Revision history for Term::Choose::Util
 
 
+1.4.6   2024-05-31
+        - Update 'choose-directories' and 'choose-a-file'.
+        - Code refactoring.
+
 1.4.5   2024-05-24
-        - 'choose_directories': keep chosen directories in the list of available directories.
-        - 'choose_directories': don't prefix back and confirm with spaces.
+        - 'choose-directories': keep chosen directories in the list of available directories.
+        - 'choose-directories': don't prefix back and confirm with spaces.
         - Update documentation.
 
 1.4.4   2024-01-15
-        - 'settings_menu': set undefined and out of bonds indexes to 0.
+        - 'settings-menu': set undefined and out of bonds indexes to 0.
         - Added github actions workflow test.
 
 1.4.3   2023-05-14
@@ -67,7 +71,7 @@ Revision history for Term::Choose::Util
 
 1.3.1   2020-01-26
         - choose-a-file: new option 'filter'.
-        - Rewritten 'choose_directories'.
+        - Rewritten 'choose-directories'.
         - Bugfix color-output in 'choose-a-number'.
         - Set the option 'color' to 2 to enable colors also for the current selected item.
 
@@ -141,7 +145,7 @@ Revision history for Term::Choose::Util
         - Bugfix documentation
 
 1.0.5   2018-01-17
-        - "settings_menu": the option "in-place" will be removed
+        - "settings-menu": the option "in-place" will be removed
 
 1.0.4   2018-01-16
         - Update documentation.
@@ -247,7 +251,7 @@ Revision history for Term::Choose::Util
         - Pass a global ncurses-win to Term::Choose
 
 0.003   2016-02-25
-        - Renamed 'change_config' to 'settings_menu'
+        - Renamed 'change_config' to 'settings-menu'
         - Compatible to Term::Choose version 0.100
 
 0.002   2016-02-16

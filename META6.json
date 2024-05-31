@@ -3,7 +3,7 @@
   "build-depends": [
   ],
   "depends": [
-    "Term::Choose:ver<1.9.3+>"
+    "Term::Choose:ver<1.9.4+>"
   ],
   "description": "TUI-related functions for selecting directories, files, numbers and subsets of lists.",
   "license": "Artistic-2.0",
@@ -22,5 +22,5 @@
   "test-depends": [
     "Test"
   ],
-  "version": "1.4.5"
+  "version": "1.4.6"
 }

@@ -1,13 +1,11 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.5>;
+unit class Term::Choose::Util:ver<1.4.6>;
 
 use Term::Choose;
+use Term::Choose::Constant;
 use Term::Choose::LineFold;
 use Term::Choose::Screen;
 
-subset Positive_Int of Int where * > 0;
-subset Int_0_to_2   of Int where * == 0|1|2;
-subset Int_0_or_1   of Int where * == 0|1;
 
 has Int_0_or_1   $.all-by-default  = 0;
 has Int_0_or_1   $.clear-screen    = 0;
@@ -43,10 +41,9 @@ has Str $.init-dir                 = $*HOME.Str;
 has Str $.parent-dir               = '..';
 has Str $.prefix                   = '';
 has Str $.prompt                   = 'Your choice: ';
+has Str $.prompt2;
 has Str $.thousands-separator      = ',';
-
-# no doc:
-has Str $.reset                    = 'reset';
+has Str $.reset                    = 'reset'; # no doc
 
 
 method !_init_term ( *%opt ) {
@@ -104,6 +101,7 @@ method choose-directories (
         Str          :$init-dir     = $!init-dir,
         Str          :$parent-dir   = $!parent-dir,
         Str          :$prompt       = $!prompt,
+        Str          :$prompt2      = $!prompt2,
         List         :$margin       = $!margin,
         List         :$tabs-info    = $!tabs-info,
         List         :$tabs-prompt  = $!tabs-prompt,
@@ -189,10 +187,11 @@ method choose-directories (
             @tmp_cs_label.push: $dirs_chosen;
             @tmp_cs_label.push: $path;
             @tmp_cs_label.push: 'Add: ';
+            my $add_prompt = $prompt2 // $prompt;
             # choose_a_subset
             my Int @idxs = self.choose-a-subset(
                 @avail_dirs.map({ .basename }).sort,
-                :$info, :$prompt, :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ), :1keep-chosen,
+                :$info, :prompt( $add_prompt ), :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ), :1keep-chosen,
                 :cs-label( @tmp_cs_label.join: "\n" ), :$page, :$footer, :$keep, :1index, :0hide-cursor, :0clear-screen,
                 :0save-screen, :$margin, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
             );
@@ -270,6 +269,7 @@ method choose-a-file (
         Str          :$init-dir     = $!init-dir,
         Str          :$info         = $!info,
         Str          :$prompt       = $!prompt,
+        Str          :$prompt2      = $!prompt2,
         Str          :$cs-label     = $!cs-label // 'File: ',
         Str          :$footer       = $!footer,
         Str          :$back         = $!back,
@@ -288,13 +288,13 @@ method choose-a-file (
         :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
     );
     my IO::Path $dir = $init-dir.IO;
-    my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$info, :$prompt, :$cs-label, :back( '<<' ),
-                   :confirm<OK>, :$parent-dir, :$filter;
+    my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$info, :$prompt, :$prompt2, :$cs-label,
+                   :back( '<<' ), :confirm<OK>, :$parent-dir, :$filter;
     my %opt_file = %opt_path;
     %opt_file<back> = $back;
     %opt_file<confirm> = $confirm;
     CHOOSE_DIR: loop {
-        my Str $prompt_fmt = "File-Directory: %s";
+        my Str $prompt_fmt = "File Directory: %s";
         if $prompt.chars {
             $prompt_fmt ~= "\n" ~ $prompt;
         }
@@ -396,10 +396,11 @@ method !_a_file ( $tc, IO::Path $dir, %opt --> IO::Path ) {
             return;
         }
         my Str @tmp_prompt;
-        @tmp_prompt.push: 'File-Directory: ' ~ $dir;
+        @tmp_prompt.push: 'Directory: ' ~ $dir;
         @tmp_prompt.push: %opt<cs-label> ~ ( ($prev_dir//'').chars ?? $prev_dir !! '' );
-        if %opt<prompt>.chars {
-            @tmp_prompt.push: %opt<prompt>;
+        my Str $prompt2 = %opt<prompt2> // %opt<prompt>;
+        if $prompt2.chars {
+            @tmp_prompt.push: $prompt2;
         }
         my Str $prompt = @tmp_prompt.join: "\n";
         my @pre = ( Str );
@@ -841,6 +842,8 @@ method settings-menu ( @menu, %setup,
 }
 
 
+
+
 sub insert-sep ( $num, $thousands-separator = ' ' ) is export( :insert-sep ) {
     return $num if ! $num.defined;
     return $num if $num ~~ /$thousands-separator/;
@@ -851,8 +854,8 @@ sub insert-sep ( $num, $thousands-separator = ' ' ) is export( :insert-sep ) {
         return $num;
     }
     my $new = $<sign> // '';
-    $new ~= $<int>.flip.comb( / . ** 1..3 / ).join( "\x[feff]\x[feff]" ).flip;
-    $new.=subst( /"\x[feff]\x[feff]"/, $thousands-separator, :g ); # to preserve ansi color escapes in the thousands-separator
+    $new ~= $<int>.flip.comb( / . ** 1..3 / ).join( ph-char ~ ph-char ).flip;
+    $new.=subst( / $(ph-char) $(ph-char) /, $thousands-separator, :g ); # to preserve ansi color escapes in the thousands-separator
     $new ~= $<rest> // '';
     return $new;
 }
@@ -871,11 +874,11 @@ sub unicode-sprintf (
         if $color {
             my Str @colors;
             my $string = $str;
-            $string.=subst( / \x[feff] /, '', :g );
-            $string.=subst( / ( \e \[ <[\d;]>* m ) /, { @colors.push( $0.Str ) && "\x[feff]" }, :g );
+            $string.=subst( / $(ph-char) /, '', :g );
+            $string.=subst( / ( <rx-color> ) /, { @colors.push( $0.Str ) && ph-char }, :g );
             $string = to-printwidth( $string, $avail_col_w, $add_dots, %cache ).[0];
             if @colors.elems {
-                $string.=subst( / \x[feff] /, { @colors.shift }, :g );
+                $string.=subst( / $(ph-char) /, { @colors.shift }, :g );
                 if @colors.elems {
                     $string ~= @colors[*-1];
                 }
@@ -883,7 +886,7 @@ sub unicode-sprintf (
             return $string;
         }
         else {
-            return to-printwidth( $str, $avail_col_w, $add_dots, %cache ).[0]; # ### 
+            return to-printwidth( $str, $avail_col_w, $add_dots, %cache ).[0]; ##
         }
     }
     elsif $str_length < $avail_col_w {
@@ -906,7 +909,7 @@ sub unicode-sprintf (
 
 sub print-columns-ext ( $str, Int $color ) { # Str $str
     if ( $color ) { # && $str ~~ Str
-        return print-columns( $str.subst( / \e \[ <[\d;]>* m /, '', :g ) );
+        return print-columns( $str.subst( &rx-color, '', :g ) );
     }
     else {
         return print-columns( $str );
@@ -1152,6 +1155,14 @@ Only files matching this pattern will be displayed.
 
 The regex pattern is used as the value of C<dir>s C<:test> parameter.
 
+=item1 prompt2
+
+While I<prompt> is used in the directory menu, I<prompt2> is the prompt in the menu where you select the file.
+
+If I<prompt2> is set to the empty string, no prompt line is displayed.
+
+Default: value of I<prompt>
+
 =head2 choose-directories
 
 =begin code
@@ -1162,7 +1173,16 @@ The regex pattern is used as the value of C<dir>s C<:test> parameter.
 
 C<choose-directories> is similar to C<choose-a-directory> but it is possible to return multiple directories.
 
-Options as in L<#choose-a-directory>.
+Options as in L<#choose-a-directory> plus
+
+=item1 prompt2
+
+While I<prompt> is used in the "Change Location" menu, I<prompt2> is the prompt in the menu where you select the
+directories.
+
+If I<prompt2> is set to the empty string, no prompt line is displayed.
+
+Default: value of I<prompt>
 
 =head2 choose-a-number
 
@@ -1357,6 +1377,10 @@ scrolling through the list once the cursor jumps back to the top row.
 If the "back" menu entry is chosen, C<settings-menu> does not apply the made changes and returns nothing. If the
 "confirm" menu entry is chosen, C<settings-menu> applies the made changes in place to the passed configuration hash
 (second argument) and returns the number of made changes.
+
+=head1 REQUIREMENTS
+
+Same requirements as L<Term::Choose>.
 
 =head1 AUTHOR
 
