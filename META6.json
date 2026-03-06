@@ -10,11 +10,11 @@
   "name": "Term::Choose::Util",
   "perl": "6.d",
   "provides": {
-    "Term::Choose::Util": "lib/Term/Choose/Util.pm6"
+    "Term::Choose::Util": "lib/Term/Choose/Util.rakumod"
   },
   "resources": [
   ],
-  "source-url": "git://github.com/kuerbis/Term-Choose-Util-p6.git",
+  "source-url": "https://github.com/kuerbis/Term-Choose-Util-p6.git",
   "tags": [
     "cli",
     "terminal"
@@ -22,5 +22,5 @@
   "test-depends": [
     "Test"
   ],
-  "version": "1.4.6"
+  "version": "1.4.7"
 }

@@ -7,7 +7,7 @@ my Int $this_year = Date.new( now ).year;
 
 my @files = (
     'README.md',
-    'lib/Term/Choose/Util.pm6',
+    'lib/Term/Choose/Util.rakumod',
 );
 
 my Str $author = 'Matth..?us\sKiem';

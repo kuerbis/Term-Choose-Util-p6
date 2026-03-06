@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.6>;
+unit class Term::Choose::Util:ver<1.4.7>;
 
 use Term::Choose;
 use Term::Choose::Constant;
@@ -697,7 +697,7 @@ method choose-a-subset ( @list,
         $new_idx.append: @tmp_idx.reverse;
         if $ok {
             if ! $new_idx.elems && $all-by-default {
-                $new_idx = [ 0 .. @list.end ];
+                $new_idx = Array[Int].new( 0 .. @list.end );
             }
             self!_end_term( :$hide-cursor, :$save-screen );
             return $index ?? @$new_idx !! Array.new( @list[|$new_idx] );
@@ -1394,7 +1394,7 @@ help.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2024 Matthäus Kiem.
+Copyright 2016-2026 Matthäus Kiem.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
