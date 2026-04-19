@@ -1,6 +1,11 @@
 Revision history for Term::Choose::Util
 
 
+1.4.8   2026-04-19
+        - New options: max-width, bottom-text, tabs-bottom-text.
+        - Update options: tabs-info and tabs-prompt.
+        - Update prompt defaults.
+
 1.4.7   2026-03-06
         - Bugfix datatype.
         - Change file extensions from .pm6 to .rakumod

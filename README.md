@@ -28,6 +28,12 @@ Customize the string of the menu entry "back".
 
 Default: `BACK`
 
+  * bottom-text
+
+Expects as its value a string. If set, the text is printed below the menu.
+
+Default: undef
+
   * clear-screen
 
 If enabled, the screen is cleared before the output.
@@ -82,11 +88,19 @@ The option *margin* allows one to set a margin on all four sides.
 
 - left margin (number of terminal columns)
 
-*margin* does not affect the *info* string. To add margins to the *info* string see *tabs-info*.
-
-*margin* changes the default values of *tabs-prompt*.
+See also [tabs-info](#tabs-info), [tabs-prompt](#tabs-prompt) and [tabs-bottom-text](#tabs-bottom-text).
 
 Allowed values: 0 or greater. Elements beyond the fourth are ignored.
+
+Default: undef
+
+  * max-width
+
+If defined, sets the maximal output width to *max-width* if the terminal width is greater than *max-width*.
+
+To prevent the "auto-format" to use a width less than *max-width* set *layout* to `0`.
+
+Allowed values: 2 or greater
 
 Default: undef
 
@@ -102,7 +116,7 @@ A string placed on top of the available choices.
 
 If the *prompt* is set to the empty string, no prompt line is displayed.
 
-Default: 'Your choice: '
+Default: different defaults
 
   * save-screen
 
@@ -110,37 +124,39 @@ Default: 'Your choice: '
 
 1 - use the alternate screen
 
+  * tabs-bottom-text
+
+Expects a reference to an array with one to five elements:
+
+- The 1st element (initial tab) specifies the number of spaces inserted at the beginning of paragraphs.
+
+- The 2nd element (subsequent tab) specifies the number of spaces inserted at the beginning of wrapped lines (excluding paragraph starts).
+
+- The 3rd element specifies the number of spaces used as the left margin.
+
+- The 4th element specifies the number of spaces used as the right margin.
+
+- The 5th element specifies the maximum output width.
+
+Allowed values:
+
+- For the first four elements: 0 or greater
+
+- For the fifth element: 2 or greater
+
+If *tabs-bottom-text* is not defined:
+
+- If *margin* is defined, its values are used for the left and right margins.
+
+- If *max-width* is defined, it is used as the maximum output width.
+
   * tabs-info
 
-The option *tabs-info* allows one to insert spaces at the beginning and the end of *info* lines.
-
-*tabs-info* expects a reference to an array with one to three elements:
-
-- the first element (initial tab) sets the number of spaces inserted at beginning of paragraphs
-
-- the second element (subsequent tab) sets the number of spaces inserted at the beginning of all broken lines apart from the beginning of paragraphs
-
-- the third element sets the number of spaces used as a right margin.
-
-Allowed values: 0 or greater. Elements beyond the third are ignored.
-
-default: If *margin* is set, the initial-tab and the subsequent-tab are set to left-*margin* and the right margin is set to right-*margin*. If *margin* is not defined, the default is undefined.
+Works the same way as [tabs-bottom-text](#tabs-bottom-text).
 
   * tabs-prompt
 
-The option *tabs-prompt* allows one to insert spaces at the beginning and the end of the current-selection and *prompt* lines.
-
-*tabs-prompt* expects a reference to an array with one to three elements:
-
-- the first element (initial tab) sets the number of spaces inserted at beginning of paragraphs
-
-- the second element (subsequent tab) sets the number of spaces inserted at the beginning of all broken lines apart from the beginning of paragraphs
-
-- the third element sets the number of spaces used as a right margin.
-
-Allowed values: 0 or greater. Elements beyond the third are ignored.
-
-default: If *margin* is set, the initial-tab and the subsequent-tab are set to left-*margin* and the right margin is set to right-*margin*. `choose-directories` and `choose-a-subset`: +2 for the subsequent-tab. Else the default is undefined.
+Works the same way as [tabs-bottom-text](#tabs-bottom-text).
 
 choose-a-directory
 ------------------

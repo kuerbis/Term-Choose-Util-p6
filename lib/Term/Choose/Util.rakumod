@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Choose::Util:ver<1.4.7>;
+unit class Term::Choose::Util:ver<1.4.8>;
 
 use Term::Choose;
 use Term::Choose::Constant;
@@ -22,13 +22,16 @@ has Int_0_to_2   $.alignment       = 0;
 has Int_0_to_2   $.color           = 0;
 has Int_0_to_2   $.layout          = 1;
 has Int_0_to_2   $.page            = 1; # no doc
+has Int_2_or_gt  $.max-width;
 has Positive_Int $.default-number;
 has Positive_Int $.keep            = 5; # no doc
 has List $.margin;
 has List $.mark                    = [];
-has List $.tabs-info;              # undef
-has List $.tabs-prompt;            # undef
+has List $.tabs-bottom-text;
+has List $.tabs-info;
+has List $.tabs-prompt;
 has Str $.back                     = 'BACK';
+has Str $.bottom-text              = ''; ##
 has Str $.confirm                  = 'CONFIRM';
 has Str $.cs-begin                 = '';
 has Str $.cs-label;
@@ -36,11 +39,11 @@ has Str $.cs-end                   = '';
 has Str $.cs-separator             = ', ';
 has Str $.filter;
 has Str $.footer                   = ''; # no doc
-has Str $.info                     = '';
+has Str $.info                     = ''; ##
 has Str $.init-dir                 = $*HOME.Str;
 has Str $.parent-dir               = '..';
 has Str $.prefix                   = '';
-has Str $.prompt                   = 'Your choice: ';
+has Str $.prompt;
 has Str $.prompt2;
 has Str $.thousands-separator      = ',';
 has Str $.reset                    = 'reset'; # no doc
@@ -82,49 +85,48 @@ method !_end_term ( *%opt ) {
 sub choose-directories ( *%opt ) is export( :DEFAULT, :choose-directories ) { Term::Choose::Util.new().choose-directories( |%opt ) }
 
 method choose-directories (
-        Int_0_or_1   :$clear-screen = $!clear-screen,
-        Int_0_or_1   :$hide-cursor  = $!hide-cursor,
-        Int_0_or_1   :$mouse        = $!mouse,
-        Int_0_or_1   :$order        = $!order,
-        Int_0_or_1   :$save-screen  = $!save-screen,
-        Int_0_or_1   :$show-hidden  = $!show-hidden,
-        Int_0_to_2   :$alignment    = $!alignment,
-        Int_0_to_2   :$color        = $!color,
-        Int_0_to_2   :$layout       = $!layout,
-        Int_0_to_2   :$page         = $!page,
-        Positive_Int :$keep         = $!keep;
-        Str          :$back         = $!back,
-        Str          :$confirm      = $!confirm,
-        Str          :$cs-label     = $!cs-label // 'Chosen Dirs: ',
-        Str          :$footer       = $!footer,
-        Str          :$info         = $!info,
-        Str          :$init-dir     = $!init-dir,
-        Str          :$parent-dir   = $!parent-dir,
-        Str          :$prompt       = $!prompt,
-        Str          :$prompt2      = $!prompt2,
-        List         :$margin       = $!margin,
-        List         :$tabs-info    = $!tabs-info,
-        List         :$tabs-prompt  = $!tabs-prompt,
+        Int_0_or_1   :$clear-screen     = $!clear-screen,
+        Int_0_or_1   :$hide-cursor      = $!hide-cursor,
+        Int_0_or_1   :$mouse            = $!mouse,
+        Int_0_or_1   :$order            = $!order,
+        Int_0_or_1   :$save-screen      = $!save-screen,
+        Int_0_or_1   :$show-hidden      = $!show-hidden,
+        Int_0_to_2   :$alignment        = $!alignment,
+        Int_0_to_2   :$color            = $!color,
+        Int_0_to_2   :$layout           = $!layout,
+        Int_0_to_2   :$page             = $!page,
+        Int_2_or_gt  :$max-width        = $!max-width;
+        Positive_Int :$keep             = $!keep;
+        Str          :$back             = $!back,
+        Str          :$bottom-text      = $!bottom-text,
+        Str          :$confirm          = $!confirm,
+        Str          :$cs-label         = $!cs-label // 'Chosen Dirs: ',
+        Str          :$footer           = $!footer,
+        Str          :$info             = $!info,
+        Str          :$init-dir         = $!init-dir,
+        Str          :$parent-dir       = $!parent-dir,
+        Str          :$prompt           = $!prompt // 'Change Location:',
+        Str          :$prompt2          = $!prompt2 // 'Add Directories:',
+        List         :$margin           = $!margin,
+        List         :$tabs-bottom-text = $!tabs-bottom-text,
+        List         :$tabs-info        = $!tabs-info,
+        List         :$tabs-prompt      = $!tabs-prompt,
         --> Array[IO::Path]
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt;
-    if $tabs-prompt.defined {
-        $local_tabs_prompt = $tabs-prompt;
-    }
-    else {
+    if ! $tabs-prompt.defined {
         my Int $subseq_tab = 2;
         if $margin {
-            $local_tabs_prompt = [ $margin[3], $margin[3] + $subseq_tab, $margin[1] ];
+            $local_tabs_prompt = [ 0, $subseq_tab, $margin[3], $margin[1], $max-width ];
         }
         else {
-            $local_tabs_prompt = [ 0, $subseq_tab, 0 ];
+            $local_tabs_prompt = [ 0, $subseq_tab, 0, 0, $max-width ];
         }
     }
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
-        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$info, :$keep, :1loop, :$margin, :$mouse, :$page,
+        :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt ), :$bottom-text, :$tabs-bottom-text, :$max-width
     );
     my IO::Path @chosen_dirs; #
     my IO::Path $dir = $init-dir.IO;
@@ -140,7 +142,7 @@ method choose-directories (
         # Choose
         my Str $choice = $tc.choose(
             [ Str, $confirm_mode, $change_path, $add_dirs ],
-            :$info, :prompt( $mode_prompt ), :2layout, :undef( $back )
+            :prompt( $mode_prompt ), :2layout, :undef( $back ) # :$info,
         );
         if ! $choice.defined {
             if @bu.elems {
@@ -161,8 +163,8 @@ method choose-directories (
             if $prompt.chars {
                 $prompt_fmt ~= "\n" ~ $prompt;
             }
-            my %opt_path = :info( '' ), :$order, :$prompt, :$show-hidden, :$alignment, :$layout, :$init-dir,
-                           :back( '<<' ), :confirm<OK>, :$parent-dir;
+            my %opt_path = :$order, :$prompt, :$show-hidden, :$alignment, :$layout, :$init-dir, :back( '<<' ),
+                           :confirm<OK>, :$parent-dir;
             my IO::Path $tmp_dir = self!_choose_a_path( $tc, $dir, $prompt_fmt, %opt_path );
             if $tmp_dir.defined {
                 $dir = $tmp_dir;
@@ -186,14 +188,13 @@ method choose-directories (
             my Str @tmp_cs_label;
             @tmp_cs_label.push: $dirs_chosen;
             @tmp_cs_label.push: $path;
-            @tmp_cs_label.push: 'Add: ';
-            my $add_prompt = $prompt2 // $prompt;
+            @tmp_cs_label.push: '+ ';
             # choose_a_subset
             my Int @idxs = self.choose-a-subset(
                 @avail_dirs.map({ .basename }).sort,
-                :$info, :prompt( $add_prompt ), :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ), :1keep-chosen,
+                :$info, :prompt( $prompt2 ), :back( '<<' ), :$color, :confirm( 'OK' ), :cs-begin( '' ), :1keep-chosen,
                 :cs-label( @tmp_cs_label.join: "\n" ), :$page, :$footer, :$keep, :1index, :0hide-cursor, :0clear-screen,
-                :0save-screen, :$margin, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+                :0save-screen, :$margin, :$tabs-info, :tabs-prompt( $local_tabs_prompt ), :$bottom-text, :$tabs-bottom-text, :$max-width
             );
             if @idxs.elems {
                 @bu.push: [ $dir, [ |@chosen_dirs ] ];
@@ -207,39 +208,40 @@ method choose-directories (
 sub choose-a-directory ( *%opt ) is export( :DEFAULT, :choose-a-directory ) { Term::Choose::Util.new().choose-a-directory( |%opt ) }
 
 method choose-a-directory (
-        Int_0_or_1   :$clear-screen = $!clear-screen,
-        Int_0_or_1   :$hide-cursor  = $!hide-cursor,
-        Int_0_or_1   :$mouse        = $!mouse,
-        Int_0_or_1   :$order        = $!order,
-        Int_0_or_1   :$save-screen  = $!save-screen,
-        Int_0_or_1   :$show-hidden  = $!show-hidden,
-        Int_0_to_2   :$alignment    = $!alignment,
-        Int_0_to_2   :$color        = $!color,
-        Int_0_to_2   :$layout       = $!layout,
-        Int_0_to_2   :$page         = $!page,
-        Positive_Int :$keep         = $!keep;
-        Str          :$init-dir     = $!init-dir,
-        Str          :$info         = $!info,
-        Str          :$prompt       = $!prompt,
-        Str          :$cs-label     = $!cs-label // 'Directory: ',
-        Str          :$footer       = $!footer,
-        Str          :$back         = $!back,
-        Str          :$confirm      = $!confirm,
-        Str          :$parent-dir   = $!parent-dir,
-        List         :$margin       = $!margin,
-        List         :$tabs-info    = $!tabs-info,
-        List         :$tabs-prompt  = $!tabs-prompt,
+        Int_0_or_1   :$clear-screen     = $!clear-screen,
+        Int_0_or_1   :$hide-cursor      = $!hide-cursor,
+        Int_0_or_1   :$mouse            = $!mouse,
+        Int_0_or_1   :$order            = $!order,
+        Int_0_or_1   :$save-screen      = $!save-screen,
+        Int_0_or_1   :$show-hidden      = $!show-hidden,
+        Int_0_to_2   :$alignment        = $!alignment,
+        Int_0_to_2   :$color            = $!color,
+        Int_0_to_2   :$layout           = $!layout,
+        Int_0_to_2   :$page             = $!page,
+        Int_2_or_gt  :$max-width        = $!max-width;
+        Positive_Int :$keep             = $!keep;
+        Str          :$bottom-text      = $!bottom-text,
+        Str          :$init-dir         = $!init-dir,
+        Str          :$info             = $!info,
+        Str          :$prompt           = $!prompt // 'Choose a directory:',
+        Str          :$cs-label         = $!cs-label // 'Directory: ',
+        Str          :$footer           = $!footer,
+        Str          :$back             = $!back,
+        Str          :$confirm          = $!confirm,
+        Str          :$parent-dir       = $!parent-dir,
+        List         :$margin           = $!margin,
+        List         :$tabs-bottom-text = $!tabs-bottom-text,
+        List         :$tabs-info        = $!tabs-info,
+        List         :$tabs-prompt      = $!tabs-prompt,
         --> IO::Path
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
-        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$info, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :$tabs-info, :$tabs-prompt, :$bottom-text, :$tabs-bottom-text, :$max-width
     );
     my IO::Path $dir = $init-dir.IO;
-    my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$info, :$prompt, :$back, :$confirm, :$parent-dir,
+    my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$prompt, :$back, :$confirm, :$parent-dir,
                    :$back, :$confirm;
     my Str $prompt_fmt = $cs-label ~ "%s";
     if $prompt.chars {
@@ -254,47 +256,48 @@ method choose-a-directory (
 sub choose-a-file ( *%opt ) is export( :DEFAULT, :choose-a-file ) { Term::Choose::Util.new().choose-a-file( |%opt ) }
 
 method choose-a-file (
-        Int_0_or_1   :$clear-screen = $!clear-screen,
-        Int_0_or_1   :$hide-cursor  = $!hide-cursor,
-        Int_0_or_1   :$mouse        = $!mouse,
-        Int_0_or_1   :$order        = $!order,
-        Int_0_or_1   :$save-screen  = $!save-screen,
-        Int_0_or_1   :$show-hidden  = $!show-hidden,
-        Int_0_to_2   :$alignment    = $!alignment,
-        Int_0_to_2   :$color        = $!color,
-        Int_0_to_2   :$layout       = $!layout,
-        Int_0_to_2   :$page         = $!page,
-        Positive_Int :$keep         = $!keep;
-        Str          :$filter       = $!filter,
-        Str          :$init-dir     = $!init-dir,
-        Str          :$info         = $!info,
-        Str          :$prompt       = $!prompt,
-        Str          :$prompt2      = $!prompt2,
-        Str          :$cs-label     = $!cs-label // 'File: ',
-        Str          :$footer       = $!footer,
-        Str          :$back         = $!back,
-        Str          :$confirm      = $!confirm,
-        Str          :$parent-dir   = $!parent-dir,
-        List         :$margin       = $!margin,
-        List         :$tabs-info    = $!tabs-info,
-        List         :$tabs-prompt  = $!tabs-prompt,
+        Int_0_or_1   :$clear-screen     = $!clear-screen,
+        Int_0_or_1   :$hide-cursor      = $!hide-cursor,
+        Int_0_or_1   :$mouse            = $!mouse,
+        Int_0_or_1   :$order            = $!order,
+        Int_0_or_1   :$save-screen      = $!save-screen,
+        Int_0_or_1   :$show-hidden      = $!show-hidden,
+        Int_0_to_2   :$alignment        = $!alignment,
+        Int_0_to_2   :$color            = $!color,
+        Int_0_to_2   :$layout           = $!layout,
+        Int_0_to_2   :$page             = $!page,
+        Int_2_or_gt  :$max-width        = $!max-width;
+        Positive_Int :$keep             = $!keep;
+        Str          :$bottom-text      = $!bottom-text,
+        Str          :$filter           = $!filter,
+        Str          :$init-dir         = $!init-dir,
+        Str          :$info             = $!info,
+        Str          :$prompt           = $!prompt // 'Choose the source directory:',
+        Str          :$prompt2          = $!prompt2 // 'Choose a file:',
+        Str          :$cs-label         = $!cs-label // 'File: ',
+        Str          :$footer           = $!footer,
+        Str          :$back             = $!back,
+        Str          :$confirm          = $!confirm,
+        Str          :$parent-dir       = $!parent-dir,
+        List         :$margin           = $!margin,
+        List         :$tabs-bottom-text = $!tabs-bottom-text,
+        List         :$tabs-info        = $!tabs-info,
+        List         :$tabs-prompt      = $!tabs-prompt,
         --> IO::Path
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
-        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$info, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :$tabs-info, :$tabs-prompt, :$bottom-text, :$tabs-bottom-text, :$max-width
     );
     my IO::Path $dir = $init-dir.IO;
-    my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$info, :$prompt, :$prompt2, :$cs-label,
-                   :back( '<<' ), :confirm<OK>, :$parent-dir, :$filter;
+    my %opt_path = :$order, :$show-hidden, :$alignment, :$layout, :$prompt, :$prompt2, :$cs-label, :back( '<<' ),
+                   :confirm<OK>, :$parent-dir, :$filter;
     my %opt_file = %opt_path;
     %opt_file<back> = $back;
     %opt_file<confirm> = $confirm;
     CHOOSE_DIR: loop {
-        my Str $prompt_fmt = "File Directory: %s";
+        my Str $prompt_fmt = "Source directory: %s";
         if $prompt.chars {
             $prompt_fmt ~= "\n" ~ $prompt;
         }
@@ -344,8 +347,8 @@ method !_choose_a_path ( $tc, IO::Path $dir, Str $prompt_fmt, %opt --> IO::Path 
         # Choose
         my Int $idx = $tc.choose(
             @choices,
-            :info( %opt<info> ), :$prompt, :1index, :0default, :alignment( %opt<alignment> ), :layout( %opt<layout> ),
-            :order( %opt<order> ), :undef( %opt<back> )
+            :$prompt, :1index, :0default, :alignment( %opt<alignment> ), :layout( %opt<layout> ), :order( %opt<order> ),
+            :undef( %opt<back> )
         );
         if ! $idx.defined || ! @choices[$idx].defined {
             return IO::Path;
@@ -391,12 +394,12 @@ method !_a_file ( $tc, IO::Path $dir, %opt --> IO::Path ) {
             my $prompt = "Dir: $dir\nNo files in this directory" ~ ( %opt<filter> ?? " which match filter %opt<filter>." !! "." );
             $tc.pause(
                 [ ' < ' ],
-                :$prompt, :info( %opt<info> )
+                :$prompt
             );
             return;
         }
         my Str @tmp_prompt;
-        @tmp_prompt.push: 'Directory: ' ~ $dir;
+        @tmp_prompt.push: 'Source directory: ' ~ $dir;
         @tmp_prompt.push: %opt<cs-label> ~ ( ($prev_dir//'').chars ?? $prev_dir !! '' );
         my Str $prompt2 = %opt<prompt2> // %opt<prompt>;
         if $prompt2.chars {
@@ -410,8 +413,8 @@ method !_a_file ( $tc, IO::Path $dir, %opt --> IO::Path ) {
         # Choose
         $chosen_file = $tc.choose(
             [ |@pre, |@files.sort ],
-            :info( %opt<info> ), :$prompt, :alignment( %opt<alignment> ), :layout( %opt<layout> ),
-            :order( %opt<order> ), :undef( %opt<back> )
+            :$prompt, :alignment( %opt<alignment> ), :layout( %opt<layout> ), :order( %opt<order> ),
+            :undef( %opt<back> )
         );
         if ! $chosen_file.defined || ! $chosen_file.chars {
             if ( $prev_dir.defined ) { # chars
@@ -443,10 +446,12 @@ method choose-a-number ( Int $digits = 7,
         Int_0_or_1   :$small-first         = $!small-first,
         Int_0_to_2   :$color               = $!color,
         Int_0_to_2   :$page                = $!page,
+        Int_2_or_gt  :$max-width           = $!max-width;
         Positive_Int :$keep                = $!keep;
         Positive_Int :$default-number      = $!default-number,
+        Str          :$bottom-text         = $!bottom-text,
         Str          :$info                = $!info,
-        Str          :$prompt              = $!prompt,
+        Str          :$prompt              = $!prompt // 'Your choice:',
         Str          :$cs-label            = $!cs-label,
         Str          :$footer              = $!footer,
         Str          :$thousands-separator = $!thousands-separator,
@@ -454,16 +459,15 @@ method choose-a-number ( Int $digits = 7,
         Str          :$confirm             = $!confirm,
         Str          :$reset               = $!reset,
         List         :$margin              = $!margin,
+        List         :$tabs-bottom-text    = $!tabs-bottom-text,
         List         :$tabs-info           = $!tabs-info,
         List         :$tabs-prompt         = $!tabs-prompt,
         --> Int
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
-        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$info, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :$tabs-info, :$tabs-prompt, :$bottom-text, :$tabs-bottom-text, :$max-width
     );
     my Int $sep_w = print-columns-ext( $thousands-separator, $color );
     my Int $longest = $digits + ( ( $digits - 1 ) div 3 ) * $sep_w;
@@ -526,7 +530,7 @@ method choose-a-number ( Int $digits = 7,
         # Choose
         my Str $range = $tc.choose(
             [ |@pre, |( $small-first ?? @ranges.reverse !! @ranges ) ],
-            :prompt( @tmp_prompt.join: "\n" ), :$info, :2layout, :1alignment, :undef( $back_tmp )
+            :prompt( @tmp_prompt.join: "\n" ), :2layout, :1alignment, :undef( $back_tmp )
         );
         if ! $range.defined {
             if $result.chars {
@@ -561,7 +565,7 @@ method choose-a-number ( Int $digits = 7,
         # Choose
         my Str $num = $tc.choose(
             [ |@pre, |@choices, $reset ],
-            :prompt( @tmp_prompt.join: "\n" ), :$info, :1layout, :2alignment, :0order, :undef( $back_short )
+            :prompt( @tmp_prompt.join: "\n" ), :1layout, :2alignment, :0order, :undef( $back_short ),
         );
         if ! $num.defined {
             next;
@@ -586,53 +590,52 @@ sub choose-a-subset ( @list, *%opt ) is export( :DEFAULT, :choose-a-subset ) {
 }
 
 method choose-a-subset ( @list,
-        Int_0_or_1 :$all-by-default = $!all-by-default,
-        Int_0_or_1 :$clear-screen   = $!clear-screen,
-        Int_0_or_1 :$hide-cursor    = $!hide-cursor,
-        Int_0_or_1 :$index          = $!index,
-        Int_0_or_1 :$keep-chosen    = $!keep-chosen,
-        Int_0_or_1 :$mouse          = $!mouse,
-        Int_0_or_1 :$order          = $!order,
-        Int_0_or_1 :$save-screen    = $!save-screen,
-        Int_0_to_2 :$alignment      = $!alignment,
-        Int_0_to_2 :$color          = $!color,
-        Int_0_to_2 :$layout         = $!layout,
-        Int_0_to_2 :$page           = $!page,
-        Positive_Int :$keep         = $!keep;
-        List       :$margin         = $!margin,
-        List       :$mark           = $!mark,
-        List       :$tabs-info      = $!tabs-info,
-        List       :$tabs-prompt    = $!tabs-prompt,
-        Str        :$prefix         = $!prefix,
-        Str        :$info           = $!info,
-        Str        :$prompt         = $!prompt,
-        Str        :$cs-label       = $!cs-label,
-        Str        :$cs-begin       = $!cs-begin,
-        Str        :$cs-separator   = $!cs-separator,
-        Str        :$cs-end         = $!cs-end,
-        Str        :$back           = $!back,
-        Str        :$confirm        = $!confirm,
-        Str        :$footer         = $!footer,
+        Int_0_or_1   :$all-by-default   = $!all-by-default,
+        Int_0_or_1   :$clear-screen     = $!clear-screen,
+        Int_0_or_1   :$hide-cursor      = $!hide-cursor,
+        Int_0_or_1   :$index            = $!index,
+        Int_0_or_1   :$keep-chosen      = $!keep-chosen,
+        Int_0_or_1   :$mouse            = $!mouse,
+        Int_0_or_1   :$order            = $!order,
+        Int_0_or_1   :$save-screen      = $!save-screen,
+        Int_0_to_2   :$alignment        = $!alignment,
+        Int_0_to_2   :$color            = $!color,
+        Int_0_to_2   :$layout           = $!layout,
+        Int_0_to_2   :$page             = $!page,
+        Int_2_or_gt  :$max-width        = $!max-width;
+        Positive_Int :$keep             = $!keep;
+        List         :$margin           = $!margin,
+        List         :$mark             = $!mark,
+        List         :$tabs-bottom-text = $!tabs-bottom-text,
+        List         :$tabs-info        = $!tabs-info,
+        List         :$tabs-prompt      = $!tabs-prompt,
+        Str          :$bottom-text      = $!bottom-text,
+        Str          :$prefix           = $!prefix,
+        Str          :$info             = $!info,
+        Str          :$prompt           = $!prompt // 'Your choice:',
+        Str          :$cs-label         = $!cs-label,
+        Str          :$cs-begin         = $!cs-begin,
+        Str          :$cs-separator     = $!cs-separator,
+        Str          :$cs-end           = $!cs-end,
+        Str          :$back             = $!back,
+        Str          :$confirm          = $!confirm,
+        Str          :$footer           = $!footer,
         --> Array
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
     my List $local_tabs_prompt;
-    if $tabs-prompt.defined {
-        $local_tabs_prompt = $tabs-prompt;
-    }
-    else {
+    if ! $tabs-prompt.defined {
         my Int $subseq_tab = $cs-label.defined ?? 2 !! 0;
         if $margin {
-            $local_tabs_prompt = [ $margin[3], $margin[3] + $subseq_tab, $margin[1] ];
+            $local_tabs_prompt = [ 0, $subseq_tab, $margin[3], $margin[1], $max-width ];
         }
-        elsif $subseq_tab {
-            $local_tabs_prompt = [ 0, $subseq_tab, 0 ];
+        else {
+            $local_tabs_prompt = [ 0, $subseq_tab, 0, 0, $max-width ];
         }
     }
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
-        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$info, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :$tabs-info, :tabs-prompt( $local_tabs_prompt ), :$bottom-text, :$tabs-bottom-text, :$max-width
     );
     my Array[Int] $new_idx = Array[Int].new(); # $new_idx is now defined
     my Array $new_val = [ @list ];
@@ -662,8 +665,8 @@ method choose-a-subset ( @list,
         # Choose
         my Int @idx = $tc.choose-multi(
             @choices,
-            :prompt( @tmp_prompt.join: "\n" ), :$info, :meta-items( |^@pre ), :undef( $back ), :$alignment,
-            :1index, :$layout, :$order, :mark( @initially_marked ), :2include-highlighted
+            :prompt( @tmp_prompt.join: "\n" ), :meta-items( |^@pre ), :undef( $back ), :$alignment, :1index, :$layout,
+            :$order, :mark( @initially_marked ), :2include-highlighted
         );
         if @initially_marked.elems {
             @initially_marked = ();
@@ -711,32 +714,33 @@ sub settings-menu ( @menu, %setup, *%opt ) is export( :DEFAULT, :settings-menu )
 }
 
 method settings-menu ( @menu, %setup,
-        Int_0_or_1 :$clear-screen = $!clear-screen,
-        Int_0_or_1 :$hide-cursor  = $!hide-cursor,
-        Int_0_or_1 :$mouse        = $!mouse,
-        Int_0_or_1 :$save-screen  = $!save-screen,
-        Int_0_to_2 :$color        = $!color,
-        Int_0_to_2 :$page         = $!page,
-        Positive_Int :$keep       = $!keep;
-        Str        :$info         = $!info,
-        Str        :$prompt       = $!prompt,
-        Str        :$back         = $!back,
-        Str        :$confirm      = $!confirm,
-        Str        :$cs-label     = $!cs-label,
-        Str        :$cs-begin     = $!cs-begin,
-        Str        :$cs-separator = $!cs-separator,
-        Str        :$cs-end       = $!cs-end,
-        Str        :$footer       = $!footer,
-        List       :$margin       = $!margin,
-        List       :$tabs-info    = $!tabs-info,
-        List       :$tabs-prompt  = $!tabs-prompt,
+        Int_0_or_1   :$clear-screen     = $!clear-screen,
+        Int_0_or_1   :$hide-cursor      = $!hide-cursor,
+        Int_0_or_1   :$mouse            = $!mouse,
+        Int_0_or_1   :$save-screen      = $!save-screen,
+        Int_0_to_2   :$color            = $!color,
+        Int_0_to_2   :$page             = $!page,
+        Int_2_or_gt  :$max-width        = $!max-width;
+        Positive_Int :$keep             = $!keep;
+        Str          :$bottom-text      = $!bottom-text,
+        Str          :$info             = $!info,
+        Str          :$prompt           = $!prompt // 'Your choice:',
+        Str          :$back             = $!back,
+        Str          :$confirm          = $!confirm,
+        Str          :$cs-label         = $!cs-label,
+        Str          :$cs-begin         = $!cs-begin,
+        Str          :$cs-separator     = $!cs-separator,
+        Str          :$cs-end           = $!cs-end,
+        Str          :$footer           = $!footer,
+        List         :$margin           = $!margin,
+        List         :$tabs-bottom-text = $!tabs-bottom-text,
+        List         :$tabs-info        = $!tabs-info,
+        List         :$tabs-prompt      = $!tabs-prompt,
     ) {
     self!_init_term( :$clear-screen, :$hide-cursor, :$save-screen );
-    my List $local_tabs_info = $margin && ! $tabs-info.defined ?? $margin[3,3,1] !! $tabs-info;
-    my List $local_tabs_prompt = $margin && ! $tabs-prompt.defined ?? $margin[3,3,1] !! $tabs-prompt;
     my $tc = Term::Choose.new(
-        :0clear-screen, :$color, :$footer, :0hide-cursor, :$keep, :1loop, :$margin, :$mouse, :$page
-        :0save-screen, :tabs-info( $local_tabs_info ), :tabs-prompt( $local_tabs_prompt )
+        :0clear-screen, :$color, :$footer, :0hide-cursor, :$info, :$keep, :1loop, :$margin, :$mouse, :$page
+        :0save-screen, :$tabs-info, :$tabs-prompt, :$bottom-text, :$tabs-bottom-text, :$max-width
     );
     my Int $longest = 0;
     my Int %name_w;
@@ -785,7 +789,7 @@ method settings-menu ( @menu, %setup,
         # Choose
         my Int $idx = $tc.choose(
             [ |@pre, |@print_keys ],
-            :$info, :prompt( $comb_prompt ), :1index, :$default, :2layout, :0alignment, :undef( $back )
+            :prompt( $comb_prompt ), :1index, :$default, :2layout, :0alignment, :undef( $back )
         );
         if ! $idx {
             self!_end_term( :$hide-cursor, :$save-screen );
@@ -951,6 +955,12 @@ Customize the string of the menu entry "back".
 
 Default: C<BACK>
 
+=item1 bottom-text
+
+Expects as its value a string. If set, the text is printed below the menu.
+
+Default: undef
+
 =item1 clear-screen
 
 If enabled, the screen is cleared before the output.
@@ -1007,11 +1017,19 @@ I<margin> expects a reference to an array with four elements in the following or
 
 - left margin (number of terminal columns)
 
-I<margin> does not affect the I<info> string. To add margins to the I<info> string see I<tabs-info>.
-
-I<margin> changes the default values of I<tabs-prompt>.
+See also L<#tabs-info>, L<#tabs-prompt> and L<#tabs-bottom-text>.
 
 Allowed values: 0 or greater. Elements beyond the fourth are ignored.
+
+Default: undef
+
+=item1 max-width
+
+If defined, sets the maximal output width to I<max-width> if the terminal width is greater than I<max-width>.
+
+To prevent the "auto-format" to use a width less than I<max-width> set I<layout> to C<0>.
+
+Allowed values: 2 or greater
 
 Default: undef
 
@@ -1028,7 +1046,7 @@ A string placed on top of the available choices.
 
 If the I<prompt> is set to the empty string, no prompt line is displayed.
 
-Default: 'Your choice: '
+Default: different defaults
 
 =item1 save-screen
 
@@ -1036,43 +1054,40 @@ Default: 'Your choice: '
 
 1 - use the alternate screen
 
+=item1 tabs-bottom-text
+
+Expects a reference to an array with one to five elements:
+
+- The 1st element (initial tab) specifies the number of spaces inserted at the beginning of paragraphs.
+
+- The 2nd element (subsequent tab) specifies the number of spaces inserted at the beginning of wrapped lines (excluding
+paragraph starts).
+
+- The 3rd element specifies the number of spaces used as the left margin.
+
+- The 4th element specifies the number of spaces used as the right margin.
+
+- The 5th element specifies the maximum output width.
+
+Allowed values:
+
+- For the first four elements: 0 or greater
+
+- For the fifth element: 2 or greater
+
+If I<tabs-bottom-text> is not defined:
+
+- If I<margin> is defined, its values are used for the left and right margins.
+
+- If I<max-width> is defined, it is used as the maximum output width.
+
 =item1 tabs-info
 
-The option I<tabs-info> allows one to insert spaces at the beginning and the end of I<info> lines.
-
-I<tabs-info> expects a reference to an array with one to three elements:
-
-- the first element (initial tab) sets the number of spaces inserted at beginning of paragraphs
-
-- the second element (subsequent tab) sets the number of spaces inserted at the beginning of all broken lines apart from
-the beginning of paragraphs
-
-- the third element sets the number of spaces used as a right margin.
-
-Allowed values: 0 or greater. Elements beyond the third are ignored.
-
-default: If I<margin> is set, the initial-tab and the subsequent-tab are set to left-I<margin> and the right margin is
-set to right-I<margin>. If I<margin> is not defined, the default is undefined.
+Works the same way as L<#tabs-bottom-text>.
 
 =item1 tabs-prompt
 
-The option I<tabs-prompt> allows one to insert spaces at the beginning and the end of the current-selection and
-I<prompt> lines.
-
-I<tabs-prompt> expects a reference to an array with one to three elements:
-
-- the first element (initial tab) sets the number of spaces inserted at beginning of paragraphs
-
-- the second element (subsequent tab) sets the number of spaces inserted at the beginning of all broken lines apart from
-the beginning of paragraphs
-
-- the third element sets the number of spaces used as a right margin.
-
-Allowed values: 0 or greater. Elements beyond the third are ignored.
-
-default: If I<margin> is set, the initial-tab and the subsequent-tab are set to left-I<margin> and the right margin is
-set to right-I<margin>. C<choose-directories> and C<choose-a-subset>: +2 for the subsequent-tab. Else the default is
-undefined.
+Works the same way as L<#tabs-bottom-text>.
 
 =head2 choose-a-directory
 
